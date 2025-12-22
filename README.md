@@ -1,5 +1,14 @@
 🍽️ Khilao.com (खाओ ⇒ Khilao)
 
+
+## Hosting & Infrastructure
+
+- Backend server is hosted on Render    👉 https://khilao-com.onrender.com
+- MongoDB Atlas is used for cloud database management
+- Frontend is built using React (Vite) and deployment is in progress on Netlify
+  
+
+
 Khilao.com is a full-stack food recipe sharing platform where users can discover, create, and manage recipes.
 The platform allows users to register, log in, upload recipes with images, and explore dishes shared by others.
 
