@@ -11,38 +11,58 @@ export default function RecipeDetails() {
   console.log(recipe)
 
   return (
-    <>
-      <div className='outer-container'>
-        <div className='profile'>
-          <img src={profileImg} width="50px" height="50px" />
-          <h5>{recipe.email}</h5>
-        </div>
+    <div className="w-[70%] mx-auto mt-24 space-y-6">
 
-        <h3 className='title'>{recipe.title}</h3>
-
-        {/* ✅ changed ONLY this line */}
+      {/* Profile */}
+      <div className="flex items-center gap-3">
         <img
-          src={`${BASE_URL}/images/${recipe.coverImage}`}
-          width="220px"
-          height="200px"
+          src={profileImg}
+          alt="profile"
+          className="w-12 h-12 rounded-full object-cover"
         />
-
-        <div className='recipe-details'>
-          <div className='ingredients'>
-            <h4>Ingredients</h4>
-            <ul>
-              {recipe.ingredients.map(item => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-          </div>
-
-          <div className='instructions'>
-            <h4>Instructions</h4>
-            <span>{recipe.instructions}</span>
-          </div>
-        </div>
+        <h5 className="text-slate-600 text-sm">
+          {recipe.email}
+        </h5>
       </div>
-    </>
+
+      {/* Title */}
+      <h3 className="text-2xl font-bold text-slate-800">
+        {recipe.title}
+      </h3>
+
+      {/* Image */}
+      <img
+        src={`${BASE_URL}/images/${recipe.coverImage}`}
+        alt={recipe.title}
+        className="w-[220px] h-[200px] object-cover rounded-lg shadow-md"
+      />
+
+      {/* Details */}
+      <div className="flex flex-col md:flex-row gap-10">
+
+        {/* Ingredients */}
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold text-slate-700 mb-2">
+            Ingredients
+          </h4>
+          <ul className="list-disc list-inside text-slate-600 space-y-1">
+            {recipe.ingredients.map(item => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Instructions */}
+        <div className="flex-1">
+          <h4 className="text-lg font-semibold text-slate-700 mb-2">
+            Instructions
+          </h4>
+          <p className="text-slate-600 leading-relaxed">
+            {recipe.instructions}
+          </p>
+        </div>
+
+      </div>
+    </div>
   )
 }
