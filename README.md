@@ -1,5 +1,5 @@
 
-use it =>  https://khao-khilao.netlify.app/
+use it =>  https://khao-khilao.netlify.app/    (It takes some time to load)
 
 
 
