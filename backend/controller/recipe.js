@@ -69,28 +69,70 @@ const addRecipe=async(req,res)=>{
 }
 
 const editRecipe=async(req,res)=>{
-    const {title,ingredients,instructions,time}=req.body 
-    let recipe=await Recipes.findById(req.params.id)
+    try {
+        console.log('Edit recipe request:', {
+            body: req.body,
+            file: req.file,
+            params: req.params.id
+        })
+        
+        const {title,ingredients,instructions,time}=req.body 
+        let recipe=await Recipes.findById(req.params.id)
 
-    try{
-        if(recipe){
-            let coverImage=req.file?.filename ? req.file?.filename : recipe.coverImage
-            await Recipes.findByIdAndUpdate(req.params.id,{...req.body,coverImage},{new:true})
-            res.json({title,ingredients,instructions,time})
+        if(!recipe){
+            return res.status(404).json({error:"Recipe not found"})
         }
+
+        // Handle ingredients - if it comes as a string, convert to array
+        let ingredientsList = ingredients
+        if (typeof ingredients === 'string') {
+            ingredientsList = ingredients.split(',').map(item => item.trim()).filter(item => item)
+        } else if (Array.isArray(ingredients)) {
+            ingredientsList = ingredients.filter(item => item && item.trim())
+        } else {
+            ingredientsList = recipe.ingredients // Keep existing if not provided
+        }
+
+        let coverImage = req.file?.filename ? req.file?.filename : recipe.coverImage
+        
+        const updatedRecipe = await Recipes.findByIdAndUpdate(
+            req.params.id,
+            {
+                title: title || recipe.title,
+                ingredients: ingredientsList,
+                instructions: instructions || recipe.instructions,
+                time: time || recipe.time,
+                coverImage
+            },
+            {new: true}
+        )
+        
+        console.log('Recipe updated successfully:', updatedRecipe)
+        return res.status(200).json(updatedRecipe)
     }
     catch(err){
-        return res.status(404).json({message:err})
+        console.error('Error updating recipe:', err)
+        return res.status(500).json({error: err.message || "Failed to update recipe"})
     }
     
 }
+
 const deleteRecipe=async(req,res)=>{
     try{
+        console.log('Delete recipe request:', req.params.id)
+        const recipe = await Recipes.findById(req.params.id)
+        
+        if(!recipe){
+            return res.status(404).json({error:"Recipe not found"})
+        }
+        
         await Recipes.deleteOne({_id:req.params.id})
-        res.json({status:"ok"})
+        console.log('Recipe deleted successfully')
+        return res.status(200).json({status:"ok", message: "Recipe deleted successfully"})
     }
     catch(err){
-        return res.status(400).json({message:"error"})
+        console.error('Error deleting recipe:', err)
+        return res.status(500).json({error: err.message || "Failed to delete recipe"})
     }
 }
 

@@ -76,22 +76,22 @@ export default function AddFoodRecipe() {
     try {
       // Create FormData for file upload
       const formData = new FormData()
-      formData.append('title', recipeData.title)
-      formData.append('time', recipeData.time)
-      formData.append('instructions', recipeData.instructions)
+      formData.append('title', recipeData.title.trim())
+      formData.append('time', recipeData.time.trim())
+      formData.append('instructions', recipeData.instructions.trim())
       formData.append('file', recipeData.file)
       
-      // Handle ingredients array
-      recipeData.ingredients.forEach((ingredient, index) => {
-        if (ingredient.trim()) {
-          formData.append(`ingredients[${index}]`, ingredient.trim())
-        }
-      })
+      // Send ingredients as comma-separated string
+      const ingredientsString = recipeData.ingredients
+        .filter(ing => ing && ing.trim())
+        .map(ing => ing.trim())
+        .join(',')
+      formData.append('ingredients', ingredientsString)
       
       console.log('Submitting recipe data:', {
         title: recipeData.title,
         time: recipeData.time,
-        ingredients: recipeData.ingredients,
+        ingredients: ingredientsString,
         instructions: recipeData.instructions,
         file: recipeData.file?.name
       })

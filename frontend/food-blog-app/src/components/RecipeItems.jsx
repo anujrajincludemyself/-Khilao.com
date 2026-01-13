@@ -103,18 +103,30 @@ export default function RecipeItems() {
                 </div>
 
                 {/* Fav / Actions */}
-                {
-                  !path ? (
-                    <FaHeart
-                      onClick={() => favRecipe(item)}
-                      className={`cursor-pointer transition ${
-                        favItems.some(res => res._id === item._id)
-                          ? "text-red-500"
-                          : "hover:text-red-400"
-                      }`}
-                    />
+                <div className="flex items-center gap-3">
+                  {!path ? (
+                    <>
+                      <FaHeart
+                        onClick={() => favRecipe(item)}
+                        className={`cursor-pointer transition ${
+                          favItems.some(res => res._id === item._id)
+                            ? "text-red-500"
+                            : "hover:text-red-400"
+                        }`}
+                      />
+                      {/* Delete button for all recipes */}
+                      {deletingId === item._id ? (
+                        <div className="w-4 h-4 border-2 border-red-500 border-t-transparent rounded-full animate-spin"></div>
+                      ) : (
+                        <MdDelete
+                          onClick={() => onDelete(item._id)}
+                          className="text-gray-400 hover:text-red-500 transition cursor-pointer"
+                          title="Delete recipe"
+                        />
+                      )}
+                    </>
                   ) : (
-                    <div className="flex items-center gap-3">
+                    <>
                       <Link
                         to={`/editRecipe/${item._id}`}
                         className="text-gray-300 hover:text-blue-400 transition"
@@ -129,9 +141,9 @@ export default function RecipeItems() {
                           className="text-red-500 hover:text-red-600 transition cursor-pointer"
                         />
                       )}
-                    </div>
-                  )
-                }
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </div>

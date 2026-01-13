@@ -63,20 +63,42 @@ export default function EditRecipe() {
     setIsSubmitting(true)
     
     try {
+      // Create FormData for file upload
+      const formData = new FormData()
+      formData.append('title', recipeData.title.trim())
+      formData.append('time', recipeData.time.trim())
+      formData.append('instructions', recipeData.instructions.trim())
+      
+      // Handle ingredients - convert array to comma-separated string
+      const ingredientsString = typeof recipeData.ingredients === 'string'
+        ? recipeData.ingredients
+        : recipeData.ingredients.join(',')
+      formData.append('ingredients', ingredientsString)
+      
+      // Only append file if a new one is selected
+      if (recipeData.file) {
+        formData.append('file', recipeData.file)
+      }
+      
+      const token = localStorage.getItem('token')
       await axios.put(
         `${BASE_URL}/recipe/${id}`,
-        recipeData,
+        formData,
         {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'authorization': 'bearer ' + localStorage.getItem("token")
+            'Authorization': `Bearer ${token}`
           }
         }
       )
+      alert('Recipe updated successfully!')
       navigate("/myRecipe")
     } catch (error) {
       console.error('Failed to update recipe:', error)
-      alert('Failed to update recipe. Please try again.')
+      const errorMessage = error.response?.data?.error || 
+                         error.response?.data?.message || 
+                         'Failed to update recipe'
+      alert(`Error: ${errorMessage}`)
     } finally {
       setIsSubmitting(false)
     }
