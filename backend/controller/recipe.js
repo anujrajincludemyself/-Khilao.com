@@ -26,19 +26,46 @@ const getRecipe=async(req,res)=>{
 }
 
 const addRecipe=async(req,res)=>{
-    console.log(req.user)
-    const {title,ingredients,instructions,time}=req.body 
+    try {
+        console.log('Add recipe request:', {
+            body: req.body,
+            file: req.file,
+            user: req.user
+        })
+        
+        const {title,ingredients,instructions,time}=req.body 
 
-    if(!title || !ingredients || !instructions)
-    {
-        res.json({message:"Required fields can't be empty"})
+        if(!title || !ingredients || !instructions) {
+            return res.status(400).json({error:"Required fields can't be empty"})
+        }
+
+        if(!req.file) {
+            return res.status(400).json({error:"Recipe image is required"})
+        }
+
+        // Handle ingredients - if it comes as a string, convert to array
+        let ingredientsList = ingredients
+        if (typeof ingredients === 'string') {
+            ingredientsList = ingredients.split(',').map(item => item.trim()).filter(item => item)
+        } else if (Array.isArray(ingredients)) {
+            ingredientsList = ingredients.filter(item => item && item.trim())
+        }
+
+        const newRecipe=await Recipes.create({
+            title,
+            ingredients: ingredientsList,
+            instructions,
+            time,
+            coverImage: req.file.filename,
+            createdBy: req.user.id
+        })
+        
+        console.log('Recipe created successfully:', newRecipe)
+        return res.status(201).json(newRecipe)
+    } catch (error) {
+        console.error('Error adding recipe:', error)
+        return res.status(500).json({error: 'Failed to add recipe'})
     }
-
-    const newRecipe=await Recipes.create({
-        title,ingredients,instructions,time,coverImage:req.file.filename,
-        createdBy:req.user.id
-    })
-   return res.json(newRecipe)
 }
 
 const editRecipe=async(req,res)=>{

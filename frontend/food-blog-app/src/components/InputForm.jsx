@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 import axios from 'axios'
-
-const BASE_URL = "https://khilao-com.onrender.com"
+import BASE_URL from '../config'
 
 export default function InputForm({ setIsOpen }) {
   const [formData, setFormData] = useState({
@@ -11,6 +10,7 @@ export default function InputForm({ setIsOpen }) {
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [success, setSuccess] = useState("")
 
   const handleInputChange = useCallback((field) => (e) => {
     setFormData(prev => ({
@@ -18,27 +18,74 @@ export default function InputForm({ setIsOpen }) {
       [field]: e.target.value
     }))
     if (error) setError("") // Clear error when user starts typing
-  }, [error])
+    if (success) setSuccess("") // Clear success when user starts typing
+  }, [error, success])
 
   const handleOnSubmit = useCallback(async (e) => {
     e.preventDefault()
     
     if (isLoading) return // Prevent multiple submissions
     
+    // Client-side validation
+    if (!formData.email.trim() || !formData.password.trim()) {
+      setError("Email and password are required")
+      return
+    }
+    
+    if (formData.password.length < 6) {
+      setError("Password must be at least 6 characters long")
+      return
+    }
+    
     setIsLoading(true)
     setError("")
+    setSuccess("")
 
     try {
       const endpoint = isSignUp ? "signUp" : "login"
       const response = await axios.post(`${BASE_URL}/${endpoint}`, formData, {
-        timeout: 10000 // 10 second timeout
+        timeout: 15000, // 15 second timeout for better reliability
+        headers: {
+          'Content-Type': 'application/json'
+        }
       })
       
-      localStorage.setItem("token", response.data.token)
-      localStorage.setItem("user", JSON.stringify(response.data.user))
-      setIsOpen()
+      // Handle successful response
+      if (response.data.token && response.data.user) {
+        localStorage.setItem("token", response.data.token)
+        localStorage.setItem("user", JSON.stringify(response.data.user))
+        
+        setSuccess(isSignUp ? "Account created successfully!" : "Login successful!")
+        
+        // Reset form
+        setFormData({ email: "", password: "" })
+        
+        // Close modal after short delay to show success message
+        setTimeout(() => {
+          setIsOpen()
+          window.location.reload() // Refresh to update navbar state
+        }, 1000)
+      } else {
+        setError("Invalid response from server")
+      }
     } catch (error) {
-      setError(error.response?.data?.error || "Something went wrong. Please try again.")
+      console.error('Auth error:', error)
+      
+      // Handle different types of errors
+      if (error.code === 'ECONNABORTED') {
+        setError("Request timeout. Please check your internet connection.")
+      } else if (error.response) {
+        // Server responded with error status
+        const errorMessage = error.response.data?.error || 
+                           error.response.data?.message || 
+                           "Authentication failed"
+        setError(errorMessage)
+      } else if (error.request) {
+        // Network error
+        setError("Network error. Please check your connection.")
+      } else {
+        setError("Something went wrong. Please try again.")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -47,6 +94,8 @@ export default function InputForm({ setIsOpen }) {
   const toggleMode = useCallback(() => {
     setIsSignUp(prev => !prev)
     setError("")
+    setSuccess("")
+    setFormData({ email: "", password: "" }) // Reset form when switching modes
   }, [])
 
   return (
@@ -75,15 +124,23 @@ export default function InputForm({ setIsOpen }) {
         <input
           type="password"
           required
+          minLength={6}
           value={formData.password}
           onChange={handleInputChange('password')}
           disabled={isLoading}
           className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
+        {isSignUp && (
+          <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
+        )}
       </div>
 
       {error && (
         <p className="text-sm text-red-400 text-center">{error}</p>
+      )}
+      
+      {success && (
+        <p className="text-sm text-green-400 text-center">{success}</p>
       )}
 
       <button
