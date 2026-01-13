@@ -1,27 +1,53 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import axios from 'axios'
 
 const BASE_URL = "https://khilao-com.onrender.com"
 
 export default function InputForm({ setIsOpen }) {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [formData, setFormData] = useState({
+    email: "",
+    password: ""
+  })
   const [isSignUp, setIsSignUp] = useState(false)
   const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleOnSubmit = async (e) => {
+  const handleInputChange = useCallback((field) => (e) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: e.target.value
+    }))
+    if (error) setError("") // Clear error when user starts typing
+  }, [error])
+
+  const handleOnSubmit = useCallback(async (e) => {
     e.preventDefault()
+    
+    if (isLoading) return // Prevent multiple submissions
+    
+    setIsLoading(true)
+    setError("")
 
-    let endpoint = isSignUp ? "signUp" : "login"
-
-    await axios.post(`${BASE_URL}/${endpoint}`, { email, password })
-      .then((res) => {
-        localStorage.setItem("token", res.data.token)
-        localStorage.setItem("user", JSON.stringify(res.data.user))
-        setIsOpen()
+    try {
+      const endpoint = isSignUp ? "signUp" : "login"
+      const response = await axios.post(`${BASE_URL}/${endpoint}`, formData, {
+        timeout: 10000 // 10 second timeout
       })
-      .catch(data => setError(data.response?.data?.error))
-  }
+      
+      localStorage.setItem("token", response.data.token)
+      localStorage.setItem("user", JSON.stringify(response.data.user))
+      setIsOpen()
+    } catch (error) {
+      setError(error.response?.data?.error || "Something went wrong. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [formData, isSignUp, isLoading, setIsOpen])
+
+  const toggleMode = useCallback(() => {
+    setIsSignUp(prev => !prev)
+    setError("")
+  }, [])
 
   return (
     <form
@@ -37,8 +63,10 @@ export default function InputForm({ setIsOpen }) {
         <input
           type="email"
           required
-          onChange={(e) => setEmail(e.target.value)}
-          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+          value={formData.email}
+          onChange={handleInputChange('email')}
+          disabled={isLoading}
+          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -47,8 +75,10 @@ export default function InputForm({ setIsOpen }) {
         <input
           type="password"
           required
-          onChange={(e) => setPassword(e.target.value)}
-          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+          value={formData.password}
+          onChange={handleInputChange('password')}
+          disabled={isLoading}
+          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
         />
       </div>
 
@@ -58,13 +88,24 @@ export default function InputForm({ setIsOpen }) {
 
       <button
         type="submit"
-        className="w-full bg-blue-600 hover:bg-blue-700 transition py-2 rounded-md font-semibold"
+        disabled={isLoading}
+        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition py-2 rounded-md font-semibold flex items-center justify-center"
       >
-        {isSignUp ? "Sign Up" : "Login"}
+        {isLoading ? (
+          <>
+            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            Loading...
+          </>
+        ) : (
+          isSignUp ? "Sign Up" : "Login"
+        )}
       </button>
 
       <p
-        onClick={() => setIsSignUp(prev => !prev)}
+        onClick={toggleMode}
         className="text-sm text-blue-400 text-center cursor-pointer hover:underline"
       >
         {isSignUp ? "Already have an account? Login" : "Create new account"}
@@ -72,5 +113,3 @@ export default function InputForm({ setIsOpen }) {
     </form>
   )
 }
-
-//aise he
