@@ -1,7 +1,14 @@
 const Recipes=require("../models/recipe")
 const multer  = require('multer')
+const fs = require('fs')
+const path = require('path')
 
-
+// Ensure images directory exists
+const imagesDir = './public/images'
+if (!fs.existsSync(imagesDir)){
+    fs.mkdirSync(imagesDir, { recursive: true })
+    console.log('Created images directory:', imagesDir)
+}
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -13,7 +20,20 @@ const storage = multer.diskStorage({
     }
   })
   
-  const upload = multer({ storage: storage })
+  const upload = multer({ 
+    storage: storage,
+    limits: {
+      fileSize: 5 * 1024 * 1024 // 5MB limit
+    },
+    fileFilter: function (req, file, cb) {
+      // Accept images only
+      if (!file.mimetype.startsWith('image/')) {
+        cb(new Error('Only image files are allowed!'), false)
+        return
+      }
+      cb(null, true)
+    }
+  })
 
 const getRecipes=async(req,res)=>{
     const recipes=await Recipes.find()
@@ -33,10 +53,24 @@ const addRecipe=async(req,res)=>{
             user: req.user
         })
         
+        // Check if user is authenticated
+        if(!req.user || !req.user.id) {
+            return res.status(401).json({error:"Authentication required"})
+        }
+        
         const {title,ingredients,instructions,time}=req.body 
 
-        if(!title || !ingredients || !instructions) {
-            return res.status(400).json({error:"Required fields can't be empty"})
+        // Validate required fields
+        if(!title || !title.trim()) {
+            return res.status(400).json({error:"Title is required"})
+        }
+
+        if(!ingredients) {
+            return res.status(400).json({error:"Ingredients are required"})
+        }
+
+        if(!instructions || !instructions.trim()) {
+            return res.status(400).json({error:"Instructions are required"})
         }
 
         if(!req.file) {
@@ -44,18 +78,22 @@ const addRecipe=async(req,res)=>{
         }
 
         // Handle ingredients - if it comes as a string, convert to array
-        let ingredientsList = ingredients
+        let ingredientsList = []
         if (typeof ingredients === 'string') {
             ingredientsList = ingredients.split(',').map(item => item.trim()).filter(item => item)
         } else if (Array.isArray(ingredients)) {
             ingredientsList = ingredients.filter(item => item && item.trim())
         }
 
+        if(ingredientsList.length === 0) {
+            return res.status(400).json({error:"At least one ingredient is required"})
+        }
+
         const newRecipe=await Recipes.create({
-            title,
+            title: title.trim(),
             ingredients: ingredientsList,
-            instructions,
-            time,
+            instructions: instructions.trim(),
+            time: time?.trim() || '30min',
             coverImage: req.file.filename,
             createdBy: req.user.id
         })
@@ -64,7 +102,12 @@ const addRecipe=async(req,res)=>{
         return res.status(201).json(newRecipe)
     } catch (error) {
         console.error('Error adding recipe:', error)
-        return res.status(500).json({error: 'Failed to add recipe'})
+        console.error('Error stack:', error.stack)
+        return res.status(500).json({
+            error: 'Failed to add recipe',
+            message: error.message,
+            details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        })
     }
 }
 

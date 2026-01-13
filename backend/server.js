@@ -23,6 +23,33 @@ app.use("/recipe",require("./routes/recipe"))
 
 app.use("/user", require("./routes/user"));
 
+// Global error handler
+app.use((err, req, res, next) => {
+  console.error('Global error handler:', err)
+  console.error('Error stack:', err.stack)
+  
+  // Handle multer errors
+  if (err.name === 'MulterError') {
+    return res.status(400).json({ error: `File upload error: ${err.message}` })
+  }
+  
+  // Handle validation errors
+  if (err.name === 'ValidationError') {
+    return res.status(400).json({ error: err.message })
+  }
+  
+  // Default error
+  res.status(err.status || 500).json({
+    error: err.message || 'Internal Server Error',
+    details: process.env.NODE_ENV === 'development' ? err.stack : undefined
+  })
+})
+
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' })
+})
+
 
 
 app.listen(port,()=>{
