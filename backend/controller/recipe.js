@@ -176,7 +176,11 @@ const deleteRecipe=async(req,res)=>{
             return res.status(404).json({error:"Recipe not found"})
         }
         
-        // Delete image from Cloudinary if it exists
+        // Delete recipe from database first
+        await Recipes.deleteOne({_id:req.params.id})
+        console.log('Recipe deleted from database successfully')
+        
+        // Then try to delete image from Cloudinary (non-blocking)
         if (recipe.coverImage && recipe.coverImage.includes('cloudinary')) {
             try {
                 // Extract public_id from Cloudinary URL
@@ -186,16 +190,15 @@ const deleteRecipe=async(req,res)=>{
                 const filename = fileWithExt.split('.')[0]
                 const publicId = `khao-khilao-recipes/${filename}`
                 
-                console.log('Deleting image from Cloudinary:', publicId)
-                await cloudinary.uploader.destroy(publicId)
+                console.log('Attempting to delete image from Cloudinary:', publicId)
+                const result = await cloudinary.uploader.destroy(publicId)
+                console.log('Cloudinary deletion result:', result)
             } catch (cloudError) {
-                console.error('Failed to delete from Cloudinary:', cloudError)
-                // Continue with recipe deletion even if image deletion fails
+                console.error('Failed to delete from Cloudinary (non-critical):', cloudError.message)
+                // Don't fail the request if Cloudinary deletion fails
             }
         }
         
-        await Recipes.deleteOne({_id:req.params.id})
-        console.log('Recipe deleted successfully')
         return res.status(200).json({status:"ok", message: "Recipe deleted successfully"})
     }
     catch(err){
