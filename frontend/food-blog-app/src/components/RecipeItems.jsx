@@ -9,16 +9,20 @@ import BASE_URL from '../config'
 
 export default function RecipeItems() {
   const recipes = useLoaderData()
-  const [allRecipes, setAllRecipes] = useState()
+  const [allRecipes, setAllRecipes] = useState(recipes)
   const [deletingId, setDeletingId] = useState(null)
   const [imageErrors, setImageErrors] = useState({})
+  const [isLoading, setIsLoading] = useState(false)
   let path = window.location.pathname === "/myRecipe"
   let favItems = JSON.parse(localStorage.getItem("fav")) ?? []
   const [isFavRecipe, setIsFavRecipe] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
-    setAllRecipes(recipes)
+    if (recipes) {
+      setAllRecipes(recipes)
+      setIsLoading(false)
+    }
   }, [recipes])
 
   const onDelete = async (id) => {
@@ -59,10 +63,30 @@ export default function RecipeItems() {
     setImageErrors(prev => ({ ...prev, [itemId]: true }))
   }
 
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="w-[85%] mx-auto my-12 text-center">
+        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-slate-600">Loading recipes...</p>
+      </div>
+    )
+  }
+
+  // Show empty state
+  if (!allRecipes || allRecipes.length === 0) {
+    return (
+      <div className="w-[85%] mx-auto my-12 text-center py-20">
+        <p className="text-slate-600 text-lg">No recipes found</p>
+        <p className="text-slate-500 text-sm mt-2">Be the first to share a recipe!</p>
+      </div>
+    )
+  }
+
   return (
     <div className="w-[85%] mx-auto my-12 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
       {
-        allRecipes?.map((item, index) => (
+        allRecipes.map((item, index) => (
           <div
             key={index}
             onDoubleClick={() => navigate(`/recipe/${item._id}`)}
@@ -72,7 +96,7 @@ export default function RecipeItems() {
             <div className="relative w-full h-36 bg-slate-700">
               {!imageErrors[item._id] ? (
                 <img
-                  src={`${BASE_URL}/images/${item.coverImage}`}
+                  src={item.coverImage.startsWith('http') ? item.coverImage : `${BASE_URL}/images/${item.coverImage}`}
                   alt={item.title}
                   className="w-full h-36 object-cover"
                   onError={() => handleImageError(item._id)}

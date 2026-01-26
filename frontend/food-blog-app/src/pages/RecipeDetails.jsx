@@ -10,6 +10,9 @@ export default function RecipeDetails() {
   const recipe = useLoaderData()
   console.log(recipe)
 
+  // Handle both old and new format
+  const userEmail = recipe.createdBy?.email || recipe.email
+
   return (
     <div className="w-[70%] mx-auto mt-24 space-y-6">
 
@@ -21,7 +24,7 @@ export default function RecipeDetails() {
           className="w-12 h-12 rounded-full object-cover"
         />
         <h5 className="text-slate-600 text-sm">
-          {recipe.email}
+          {userEmail}
         </h5>
       </div>
 
@@ -32,7 +35,7 @@ export default function RecipeDetails() {
 
       {/* Image */}
       <img
-        src={`${BASE_URL}/images/${recipe.coverImage}`}
+        src={recipe.coverImage.startsWith('http') ? recipe.coverImage : `${BASE_URL}/images/${recipe.coverImage}`}
         alt={recipe.title}
         className="w-[220px] h-[200px] object-cover rounded-lg shadow-md"
       />

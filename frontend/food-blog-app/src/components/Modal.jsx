@@ -10,8 +10,14 @@ export default function Modal({ children, onClose }) {
       ></div>
 
       {/* Modal */}
-      <div className="fixed inset-0 z-50 flex items-center justify-center">
-        <div className="bg-slate-900 text-white rounded-xl shadow-2xl p-6 w-[420px] max-w-[90vw] animate-fadeIn">
+      <div 
+        onClick={onClose}
+        className="fixed inset-0 z-50 flex items-center justify-center"
+      >
+        <div 
+          onClick={(e) => e.stopPropagation()}
+          className="bg-slate-900 text-white rounded-xl shadow-2xl p-6 w-[420px] max-w-[90vw] animate-fadeIn"
+        >
           {children}
         </div>
       </div>

@@ -3,10 +3,14 @@ const app = express();
 const dotenv = require ("dotenv").config()
 const cors = require ('cors')
 const bcrypt = require("bcryptjs");
+const compression = require('compression')
 const connectDB = require("./config/connectionDb")
 connectDB()
+
+// Compression middleware - compress all responses
+app.use(compression())
+
 app.use(express.json());
-app.use("/images", express.static("images"));
 app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: "*",
@@ -15,7 +19,15 @@ app.use(cors({
 }));
 const port = process.env.PORT || 3000;
 
-app.use(express.static("public"))
+app.use(express.static("public", {
+  maxAge: '1h', // Cache static files for 1 hour
+  etag: true
+}))
+
+// Health check endpoint (for uptime monitoring)
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
+})
 
 app.use("/",require("./routes/user"))
 

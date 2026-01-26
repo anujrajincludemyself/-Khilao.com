@@ -36,8 +36,17 @@ const userLogin = async (req, res) => {
 }
 
 const getUser = async (req, res) => {
-    const user = await User.findById(req.params.id)
-    res.json({email:user.email})
+    try {
+        const user = await User.findById(req.params.id).select('email').lean()
+        if(!user) {
+            return res.status(404).json({ error: 'User not found' })
+        }
+        res.set('Cache-Control', 'public, max-age=3600') // Cache for 1 hour
+        res.json({email: user.email})
+    } catch(error) {
+        console.error('Error fetching user:', error)
+        return res.status(500).json({ error: 'Failed to fetch user' })
+    }
 }
 
 module.exports = { userLogin, userSignUp, getUser }

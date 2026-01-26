@@ -52,6 +52,8 @@ export default function Home() {
             src={foodRecipe}
             alt="Food"
             className="w-[320px] h-auto"
+            loading="lazy"
+            decoding="async"
           />
         </div>
       </section>

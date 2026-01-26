@@ -1,60 +1,57 @@
 const Recipes=require("../models/recipe")
-const multer  = require('multer')
-const fs = require('fs')
-const path = require('path')
-
-// Ensure images directory exists
-const imagesDir = './public/images'
-if (!fs.existsSync(imagesDir)){
-    fs.mkdirSync(imagesDir, { recursive: true })
-    console.log('Created images directory:', imagesDir)
-}
-
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-      cb(null, './public/images')
-    },
-    filename: function (req, file, cb) {
-      const filename = Date.now() + '-' + file.fieldname
-      cb(null, filename)
-    }
-  })
-  
-  const upload = multer({ 
-    storage: storage,
-    limits: {
-      fileSize: 5 * 1024 * 1024 // 5MB limit
-    },
-    fileFilter: function (req, file, cb) {
-      // Accept images only
-      if (!file.mimetype.startsWith('image/')) {
-        cb(new Error('Only image files are allowed!'), false)
-        return
-      }
-      cb(null, true)
-    }
-  })
+const { cloudinary, upload } = require('../config/cloudinary')
 
 const getRecipes=async(req,res)=>{
-    const recipes=await Recipes.find()
-    return res.json(recipes)
+    try {
+        const limit = parseInt(req.query.limit) || 50
+        const skip = parseInt(req.query.skip) || 0
+        
+        const recipes = await Recipes.find()
+            .select('title ingredients instructions time coverImage createdBy createdAt')
+            .sort({ createdAt: -1 })
+            .limit(limit)
+            .skip(skip)
+            .lean() // Convert to plain JS objects (faster)
+        
+        // Set cache headers
+        res.set('Cache-Control', 'public, max-age=300') // Cache for 5 minutes
+        return res.json(recipes)
+    } catch(error) {
+        console.error('Error fetching recipes:', error)
+        return res.status(500).json({ error: 'Failed to fetch recipes' })
+    }
 }
 
 const getRecipe=async(req,res)=>{
-    const recipe=await Recipes.findById(req.params.id)
-    res.json(recipe)
+    try {
+        const recipe = await Recipes.findById(req.params.id)
+            .populate('createdBy', 'email') // Get user email in same query
+            .lean()
+        
+        if(!recipe) {
+            return res.status(404).json({ error: 'Recipe not found' })
+        }
+        
+        // Set cache headers
+        res.set('Cache-Control', 'public, max-age=600') // Cache for 10 minutes
+        res.json(recipe)
+    } catch(error) {
+        console.error('Error fetching recipe:', error)
+        return res.status(500).json({ error: 'Failed to fetch recipe' })
+    }
 }
 
 const addRecipe=async(req,res)=>{
     try {
-        console.log('Add recipe request:', {
-            body: req.body,
-            file: req.file,
-            user: req.user
-        })
+        console.log('=== Add recipe request ===')
+        console.log('Body:', req.body)
+        console.log('File:', req.file)
+        console.log('User:', req.user)
+        console.log('Headers:', req.headers.authorization)
         
         // Check if user is authenticated
         if(!req.user || !req.user.id) {
+            console.error('Authentication failed: No user in request')
             return res.status(401).json({error:"Authentication required"})
         }
         
@@ -94,7 +91,7 @@ const addRecipe=async(req,res)=>{
             ingredients: ingredientsList,
             instructions: instructions.trim(),
             time: time?.trim() || '30min',
-            coverImage: req.file.filename,
+            coverImage: req.file.path, // Cloudinary URL
             createdBy: req.user.id
         })
         
@@ -136,7 +133,17 @@ const editRecipe=async(req,res)=>{
             ingredientsList = recipe.ingredients // Keep existing if not provided
         }
 
-        let coverImage = req.file?.filename ? req.file?.filename : recipe.coverImage
+        let coverImage = recipe.coverImage
+        
+        // If new image uploaded, delete old one from Cloudinary and use new URL
+        if (req.file) {
+            // Extract public_id from old Cloudinary URL and delete
+            if (recipe.coverImage && recipe.coverImage.includes('cloudinary')) {
+                const publicId = recipe.coverImage.split('/').slice(-2).join('/').split('.')[0]
+                await cloudinary.uploader.destroy('khao-khilao-recipes/' + publicId.split('/').pop())
+            }
+            coverImage = req.file.path // New Cloudinary URL
+        }
         
         const updatedRecipe = await Recipes.findByIdAndUpdate(
             req.params.id,
@@ -168,8 +175,12 @@ const deleteRecipe=async(req,res)=>{
         if(!recipe){
             return res.status(404).json({error:"Recipe not found"})
         }
-        
-        await Recipes.deleteOne({_id:req.params.id})
+                // Delete image from Cloudinary if it exists
+        if (recipe.coverImage && recipe.coverImage.includes('cloudinary')) {
+            const publicId = recipe.coverImage.split('/').slice(-2).join('/').split('.')[0]
+            await cloudinary.uploader.destroy('khao-khilao-recipes/' + publicId.split('/').pop())
+        }
+                await Recipes.deleteOne({_id:req.params.id})
         console.log('Recipe deleted successfully')
         return res.status(200).json({status:"ok", message: "Recipe deleted successfully"})
     }

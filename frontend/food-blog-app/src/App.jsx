@@ -1,12 +1,24 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import './App.css'
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
-import Home from './pages/Home'
-import MainNavigation from './components/MainNavigation'
 import axios from 'axios'
-import AddFoodRecipe from './pages/AddFoodRecipe'
-import EditRecipe from './pages/EditRecipe'
-import RecipeDetails from './pages/RecipeDetails'
+
+// Lazy load pages for code splitting
+const Home = lazy(() => import('./pages/Home'))
+const MainNavigation = lazy(() => import('./components/MainNavigation'))
+const AddFoodRecipe = lazy(() => import('./pages/AddFoodRecipe'))
+const EditRecipe = lazy(() => import('./pages/EditRecipe'))
+const RecipeDetails = lazy(() => import('./pages/RecipeDetails'))
+
+// Loading fallback component
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-100">
+    <div className="text-center">
+      <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+      <p className="text-slate-600">Loading...</p>
+    </div>
+  </div>
+)
 
 
 const BASE_URL = "https://khilao-com.onrender.com";
@@ -30,17 +42,14 @@ const getFavRecipes = () => {
 }
 
 const getRecipe = async ({ params }) => {
-  let recipe;
-
-  await axios.get(`${BASE_URL}/recipe/${params.id}`)
-    .then(res => recipe = res.data)
-
-  await axios.get(`${BASE_URL}/user/${recipe.createdBy}`)
-    .then(res => {
-      recipe = { ...recipe, email: res.data.email }
-    })
-
-  return recipe
+  try {
+    // Now gets recipe with user data in single API call (optimized)
+    const response = await axios.get(`${BASE_URL}/recipe/${params.id}`)
+    return response.data // Already includes createdBy.email from populate
+  } catch (error) {
+    console.error('Error fetching recipe:', error)
+    throw new Error('Failed to load recipe')
+  }
 }
 
 const router = createBrowserRouter([
@@ -60,8 +69,8 @@ const router = createBrowserRouter([
 
 export default function App() {
   return (
-    <>
+    <Suspense fallback={<PageLoader />}>
       <RouterProvider router={router} />
-    </>
+    </Suspense>
   )
 }
