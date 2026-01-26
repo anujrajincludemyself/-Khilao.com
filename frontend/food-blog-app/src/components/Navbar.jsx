@@ -74,7 +74,6 @@ export default function Navbar() {
             <li onClick={checkLogin}>
               <span className="cursor-pointer bg-white text-blue-700 px-3 py-1.5 rounded-full text-xs md:text-sm font-semibold hover:bg-blue-100 transition">
                 {isLogin ? "Login" : "Logout"}
-                {user?.email ? ` (${user.email})` : ""}
               </span>
             </li>
 

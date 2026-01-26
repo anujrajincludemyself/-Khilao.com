@@ -175,12 +175,26 @@ const deleteRecipe=async(req,res)=>{
         if(!recipe){
             return res.status(404).json({error:"Recipe not found"})
         }
-                // Delete image from Cloudinary if it exists
+        
+        // Delete image from Cloudinary if it exists
         if (recipe.coverImage && recipe.coverImage.includes('cloudinary')) {
-            const publicId = recipe.coverImage.split('/').slice(-2).join('/').split('.')[0]
-            await cloudinary.uploader.destroy('khao-khilao-recipes/' + publicId.split('/').pop())
+            try {
+                // Extract public_id from Cloudinary URL
+                // URL format: https://res.cloudinary.com/drp981csj/image/upload/v1234/khao-khilao-recipes/filename.png
+                const urlParts = recipe.coverImage.split('/')
+                const fileWithExt = urlParts[urlParts.length - 1]
+                const filename = fileWithExt.split('.')[0]
+                const publicId = `khao-khilao-recipes/${filename}`
+                
+                console.log('Deleting image from Cloudinary:', publicId)
+                await cloudinary.uploader.destroy(publicId)
+            } catch (cloudError) {
+                console.error('Failed to delete from Cloudinary:', cloudError)
+                // Continue with recipe deletion even if image deletion fails
+            }
         }
-                await Recipes.deleteOne({_id:req.params.id})
+        
+        await Recipes.deleteOne({_id:req.params.id})
         console.log('Recipe deleted successfully')
         return res.status(200).json({status:"ok", message: "Recipe deleted successfully"})
     }
