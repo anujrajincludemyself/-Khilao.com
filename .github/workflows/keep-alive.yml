@@ -1,0 +1,28 @@
+name: Keep Render Server Alive
+
+on:
+  schedule:
+    # Run every 14 minutes (Render free tier spins down after 15 minutes of inactivity)
+    - cron: '*/14 * * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  keep-alive:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Ping Render Server
+        run: |
+          echo "🔄 Pinging server at $(date)"
+          
+          # Ping the health endpoint
+          response=$(curl -s -o /dev/null -w "%{http_code}" https://foodewe-1.onrender.com/health)
+          
+          if [ $response -eq 200 ]; then
+            echo "✅ Server is alive! Response code: $response"
+          else
+            echo "⚠️ Server responded with code: $response"
+          fi
+          
+      - name: Log Keep-Alive
+        run: echo "Keep-alive ping completed at $(date)"

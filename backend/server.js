@@ -1,7 +1,7 @@
 const express = require("express")
 const app = express();
-const dotenv = require ("dotenv").config()
-const cors = require ('cors')
+const dotenv = require("dotenv").config()
+const cors = require('cors')
 const bcrypt = require("bcryptjs");
 const compression = require('compression')
 const connectDB = require("./config/connectionDb")
@@ -29,9 +29,29 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date().toISOString() })
 })
 
-app.use("/",require("./routes/user"))
+// Self-ping mechanism to keep Render free tier alive
+if (process.env.NODE_ENV === 'production') {
+  const RENDER_URL = process.env.RENDER_URL || 'https://foodewe-1.onrender.com'
+  const PING_INTERVAL = 14 * 60 * 1000 // 14 minutes
 
-app.use("/recipe",require("./routes/recipe"))
+  setInterval(() => {
+    fetch(`${RENDER_URL}/health`)
+      .then(res => {
+        if (res.ok) {
+          console.log('✅ Keep-alive ping successful at', new Date().toISOString())
+        }
+      })
+      .catch(err => {
+        console.log('⚠️ Keep-alive ping failed:', err.message)
+      })
+  }, PING_INTERVAL)
+
+  console.log('🔄 Keep-alive mechanism activated - pinging every 14 minutes')
+}
+
+app.use("/", require("./routes/user"))
+
+app.use("/recipe", require("./routes/recipe"))
 
 app.use("/user", require("./routes/user"));
 
@@ -39,17 +59,17 @@ app.use("/user", require("./routes/user"));
 app.use((err, req, res, next) => {
   console.error('Global error handler:', err)
   console.error('Error stack:', err.stack)
-  
+
   // Handle multer errors
   if (err.name === 'MulterError') {
     return res.status(400).json({ error: `File upload error: ${err.message}` })
   }
-  
+
   // Handle validation errors
   if (err.name === 'ValidationError') {
     return res.status(400).json({ error: err.message })
   }
-  
+
   // Default error
   res.status(err.status || 500).json({
     error: err.message || 'Internal Server Error',
@@ -64,7 +84,7 @@ app.use((req, res) => {
 
 
 
-app.listen(port,()=>{
-    console.log(`app is listning at ${port}`);
-    
+app.listen(port, () => {
+  console.log(`app is listning at ${port}`);
+
 })
