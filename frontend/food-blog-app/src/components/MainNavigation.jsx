@@ -5,19 +5,14 @@ import Navbar from './Navbar'
 
 export default function MainNavigation() {
   return (
-<div className="min-h-screen bg-slate-100 flex flex-col">
-      
-      {/* Navbar */}
+    <div className="app-shell min-h-screen flex flex-col">
       <Navbar />
 
-      {/* Main Content */}
-      <main className="flex-1 pt-16 pb-10">
+      <main className="flex-1 pt-8 pb-24">
         <Outlet />
       </main>
 
-      {/* Footer */}
       <Footer />
-
     </div>
   )
 }

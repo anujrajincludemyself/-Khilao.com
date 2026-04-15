@@ -1,8 +1,8 @@
 # 🍴 खाओ<=>Khilao.com - Food Recipe Sharing Platform
 
-A full-stack web application where users can discover, share, and save their favorite food recipes with a beautiful and responsive UI.
+A production-grade full-stack food recipe app where users can discover, share, save, and generate recipes with a polished white-and-blue responsive UI.
 
-🔗 **Live Demo**: [https://khao-khilao.netlify.app](https://khao-khilao.netlify.app)  
+🔗 **Live Demo**: [https://khilao-com.vercel.app](https://khilao-com.vercel.app)  
 *(Note: Initial load may take 30-60s due to free tier cold start)*
 
 ---
@@ -15,6 +15,11 @@ A full-stack web application where users can discover, share, and save their fav
 - **❤️ Favorites**: Save recipes you love for quick access
 - **🔍 Browse All Recipes**: Discover recipes shared by the community
 - **👤 My Recipes**: View and manage only your recipes
+- **🤖 AI Recipe Studio**: Generate detailed recipes using Groq API with private per-user history
+- **🗂️ Private AI History**: Save, reopen, and delete your generated AI recipes from your own account
+- **🍲 Detailed AI Output**: AI returns ingredients, step-by-step cooking, equipment, nutrition, storage, reheating, and variations
+- **🔒 Private AI Storage**: Generated AI recipes are saved privately in MongoDB and hidden from the public feed
+- **🎨 Premium UI Refresh**: White-and-blue production-grade design with responsive cards, forms, hero, and navigation
 - **📱 Responsive Design**: Works seamlessly on mobile, tablet, and desktop
 - **⚡ Performance Optimized**: 
   - Code splitting & lazy loading (48% smaller bundle)
@@ -43,11 +48,12 @@ A full-stack web application where users can discover, share, and save their fav
 - **Bcrypt** - Password hashing
 - **Cloudinary** - Image storage & CDN
 - **Multer** - File upload handling
+- **Groq API** - AI recipe generation
 - **Compression** - Response compression
 
 ### Hosting & Infrastructure
-- **Backend:** Render (https://khilao-com.onrender.com)
-- **Frontend:** Netlify (https://khao-khilao.netlify.app)
+- **Backend:** Render (https://khilao-com-e5uj.onrender.com)
+- **Frontend:** Vercel (https://khilao-com.vercel.app)
 - **Database:** MongoDB Atlas (Cloud NoSQL)
 - **Images:** Cloudinary CDN
 
@@ -83,6 +89,9 @@ SECRET_KEY=your_jwt_secret_key
 CLOUDINARY_CLOUD_NAME=your_cloud_name
 CLOUDINARY_API_KEY=your_api_key
 CLOUDINARY_API_SECRET=your_api_secret
+
+# Groq API (AI recipe generation)
+GROQ_API_KEY=your_groq_api_key
 ```
 
 Start backend server:
@@ -96,9 +105,25 @@ npm start
 ```bash
 cd frontend/food-blog-app
 npm install
+
+# Optional: point frontend to any backend URL
+# Windows (PowerShell):
+# setx VITE_API_URL "https://khilao-com-e5uj.onrender.com"
+
 npm run dev
 # Runs on http://localhost:5173
 ```
+
+Frontend API URL behavior:
+- Uses `VITE_API_URL` when provided
+- Otherwise uses local backend in development (`http://localhost:5000`)
+- Uses Render backend in production by default
+
+AI recipe behavior:
+- AI generation is protected by login
+- AI recipes are saved only for the signed-in user
+- The AI page shows a private history list with reopen and delete actions
+- If you want to change the model, you can optionally set `GROQ_MODEL` in the backend env
 
 ---
 
@@ -115,26 +140,23 @@ npm run dev
 5. Add environment variables (same as `.env` above)
 6. Deploy! 🚀
 
-### Frontend (Netlify)
+### Frontend (Vercel)
 
 ```bash
 cd frontend/food-blog-app
 npm run build
 ```
 
-1. Go to [Netlify](https://netlify.com)
-2. Drag & drop the `dist` folder
-3. Done! ✨
-
-**Or use Netlify CLI:**
-```bash
-npm install -g netlify-cli
-netlify deploy --prod
-```
+1. Push code to GitHub
+2. Import repository in [Vercel](https://vercel.com)
+3. Set project root to `frontend/food-blog-app`
+4. Add environment variable:
+  - `VITE_API_URL=https://khilao-com-e5uj.onrender.com`
+5. Deploy ✨
 
 ### ⚡ Prevent Cold Starts (Optional)
 Set up [UptimeRobot](https://uptimerobot.com) (free):
-- Monitor: `https://khilao-com.onrender.com/health`
+- Monitor: `https://khilao-com-e5uj.onrender.com/health`
 - Interval: 5 minutes
 - Keeps backend warm on Render's free tier
 
@@ -151,11 +173,13 @@ khanabano/
 │   ├── controller/
 │   │   ├── recipe.js          # Recipe CRUD logic
 │   │   └── user.js            # User auth logic
+  │   ├── aiRecipe.js        # Groq AI recipe generation and history handling
 │   ├── middleware/
 │   │   └── auth.js            # JWT verification
 │   ├── models/
 │   │   ├── recipe.js          # Recipe schema
 │   │   └── user.js            # User schema
+  │   ├── aiRecipeHistory.js  # Private AI recipe history collection
 │   ├── routes/
 │   │   ├── recipe.js          # Recipe API routes
 │   │   └── user.js            # User API routes
@@ -176,6 +200,7 @@ khanabano/
     │   ├── pages/
     │   │   ├── AddFoodRecipe.jsx
     │   │   ├── EditRecipe.jsx
+    │   │   ├── AIRecipe.jsx
     │   │   ├── Home.jsx
     │   │   └── RecipeDetails.jsx
     │   ├── App.jsx            # Router setup
@@ -199,8 +224,13 @@ khanabano/
 - `GET /recipe` - Get all recipes (with pagination)
 - `GET /recipe/:id` - Get single recipe (with populated user)
 - `POST /recipe` - Create recipe (**auth required**)
-- `PUT /recipe/:id` - Update recipe
-- `DELETE /recipe/:id` - Delete recipe
+- `PUT /recipe/:id` - Update recipe (**auth + owner required**)
+- `DELETE /recipe/:id` - Delete recipe (**auth + owner required**)
+
+### AI Recipes
+- `POST /recipe/ai-generate` - Generate a detailed AI recipe (**auth required**)
+- `GET /recipe/ai-history` - Get current user's saved AI recipes (**auth required**)
+- `DELETE /recipe/ai-history/:id` - Delete one saved AI recipe (**auth required**)
 
 ### Health Check
 - `GET /health` - Server health status (for monitoring)
@@ -210,15 +240,22 @@ khanabano/
 ## 🐛 Troubleshooting
 
 ### Images not uploading
-- ✅ Check Cloudinary credentials in `.env`
+- ✅ Check Cloudinary credentials in `backend/.env`
 - ✅ Verify file size is under 5MB
 - ✅ Check file format (jpg, png, gif, webp only)
+- ✅ Confirm Cloudinary upload preset/folder access is valid
+
+### AI recipe generation fails
+- ✅ Check `GROQ_API_KEY` in `backend/.env`
+- ✅ Ensure the key has active credits/licensing in Groq
+- ✅ Optionally set `GROQ_MODEL` if your account uses a different model
+- ✅ Make sure you are logged in before generating AI recipes
 
 ### "Failed to load dynamically imported module"
 ```bash
 cd frontend/food-blog-app
 npm run build
-# Clear Netlify cache and redeploy dist folder
+# Redeploy latest frontend build from Vercel
 ```
 
 ### Backend cold start (slow first load)
@@ -228,6 +265,7 @@ npm run build
 ### CORS errors
 - Verify backend URL in `frontend/src/config.js`
 - Check CORS settings in `backend/server.js`
+- On Vercel, ensure `VITE_API_URL` is set to your Render backend URL
 
 ---
 
@@ -239,6 +277,8 @@ npm run build
 - 👨‍💼 Admin panel for moderation
 - 📱 Progressive Web App (PWA)
 - 🌐 Multi-language support
+- 📤 Export AI recipes to PDF or shareable links
+- 🔎 Recipe search and filter by cuisine or ingredients
 
 ---
 
@@ -252,7 +292,7 @@ This project is open source and available under the [MIT License](LICENSE).
 
 **Anuj Raj**
 
-- Website: [खाओ<=>Khilao.com](https://khao-khilao.netlify.app)
+- Website: [खाओ<=>Khilao.com](https://khilao-com.vercel.app)
 - GitHub: [@anujrajincludemyself](https://github.com/anujrajincludemyself)
 
 ---
@@ -262,7 +302,7 @@ This project is open source and available under the [MIT License](LICENSE).
 - Cloudinary for image hosting & CDN
 - MongoDB Atlas for cloud database
 - Render for backend hosting
-- Netlify for frontend hosting
+- Vercel for frontend hosting
 
 ---
 

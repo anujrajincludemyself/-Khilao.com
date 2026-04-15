@@ -106,82 +106,83 @@ export default function EditRecipe() {
 
   if (loading) {
     return (
-      <div className="min-h-[calc(100vh-120px)] flex items-center justify-center">
-        <div className="text-center text-white">
-          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p>Loading recipe...</p>
+      <div className="min-h-[calc(100vh-120px)] flex items-center justify-center px-4">
+        <div className="text-center text-slate-700 bg-white border border-blue-100 rounded-3xl px-8 py-10 shadow-lg">
+          <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="font-medium">Loading recipe...</p>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-[calc(100vh-120px)] flex items-center justify-center px-4">
+    <div className="w-[95%] max-w-4xl mx-auto mt-8 md:mt-10 mb-8 px-0">
       <form
         onSubmit={onHandleSubmit}
-        className="w-[420px] max-w-full bg-slate-900 text-white p-6 rounded-xl shadow-2xl space-y-4"
+        className="bg-white text-slate-900 p-6 md:p-8 rounded-4xl shadow-[0_24px_70px_rgba(15,23,42,0.10)] space-y-5 border border-blue-100"
       >
-        <h2 className="text-xl font-semibold text-center mb-2">
-          Edit Recipe
-        </h2>
+        <div className="space-y-2 text-center">
+          <p className="text-xs uppercase tracking-[0.3em] text-blue-600 font-semibold">Recipe Editor</p>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900">Edit Recipe</h2>
+        </div>
 
         {/* Title */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Title</label>
+          <label className="text-sm font-medium text-slate-700">Title</label>
           <input
             type="text"
             name="title"
             value={recipeData.title || ""}
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
           />
         </div>
 
         {/* Time */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Time</label>
+          <label className="text-sm font-medium text-slate-700">Time</label>
           <input
             type="text"
             name="time"
             value={recipeData.time || ""}
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
           />
         </div>
 
         {/* Ingredients */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Ingredients</label>
+          <label className="text-sm font-medium text-slate-700">Ingredients</label>
           <textarea
             name="ingredients"
             rows="4"
             value={recipeData.ingredients || ""}
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none shadow-sm"
           />
         </div>
 
         {/* Instructions */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Instructions</label>
+          <label className="text-sm font-medium text-slate-700">Instructions</label>
           <textarea
             name="instructions"
             rows="4"
             value={recipeData.instructions || ""}
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none shadow-sm"
           />
         </div>
 
         {/* Image */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Recipe Image</label>
+          <label className="text-sm font-medium text-slate-700">Recipe Image</label>
           
           {/* Current Image */}
           {currentImage && !imagePreview && (
             <div className="mb-2">
-              <p className="text-xs text-gray-400 mb-2">Current Image:</p>
-              <div className="relative w-full h-48 bg-slate-700 rounded-md overflow-hidden">
+              <p className="text-xs text-slate-500 mb-2">Current Image:</p>
+              <div className="relative w-full h-56 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
                 <img
                   src={`${BASE_URL}/images/${currentImage}`}
                   alt="Current recipe image"
@@ -191,7 +192,7 @@ export default function EditRecipe() {
                     e.target.nextSibling.style.display = 'flex'
                   }}
                 />
-                <div className="hidden w-full h-full flex-col items-center justify-center text-gray-400">
+                <div className="hidden w-full h-full flex-col items-center justify-center text-slate-400">
                   <svg className="w-12 h-12 mb-2 opacity-50" fill="currentColor" viewBox="0 0 24 24">
                     <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
                   </svg>
@@ -207,14 +208,14 @@ export default function EditRecipe() {
             accept="image/*"
             onChange={onHandleChange}
             disabled={isSubmitting}
-            className="text-sm text-gray-300 file:bg-slate-800 file:border-0 file:rounded-md file:px-3 file:py-1 file:text-white file:cursor-pointer disabled:opacity-50"
+            className="text-sm text-slate-500 file:bg-blue-600 file:border-0 file:rounded-xl file:px-4 file:py-2 file:text-white file:cursor-pointer disabled:opacity-50 file:font-semibold"
           />
           
           {/* New Image Preview */}
           {imagePreview && (
             <div className="mt-2">
-              <p className="text-xs text-gray-400 mb-2">New Image Preview:</p>
-              <div className="relative w-full h-48 bg-slate-700 rounded-md overflow-hidden">
+              <p className="text-xs text-slate-500 mb-2">New Image Preview:</p>
+              <div className="relative w-full h-56 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
                 <img
                   src={imagePreview}
                   alt="New recipe preview"
@@ -229,7 +230,7 @@ export default function EditRecipe() {
                     const fileInput = document.querySelector('input[name="file"]')
                     if (fileInput) fileInput.value = ''
                   }}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition"
+                  className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition shadow"
                 >
                   ✕
                 </button>
@@ -242,7 +243,7 @@ export default function EditRecipe() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition py-2 rounded-md font-semibold mt-2 flex items-center justify-center"
+          className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-300 disabled:to-blue-300 disabled:cursor-not-allowed transition py-3 rounded-xl font-semibold mt-2 flex items-center justify-center text-white shadow-lg shadow-blue-200"
         >
           {isSubmitting ? (
             <>

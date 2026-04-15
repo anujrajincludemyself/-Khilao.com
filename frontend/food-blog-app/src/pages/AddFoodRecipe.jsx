@@ -133,76 +133,82 @@ export default function AddFoodRecipe() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-120px)] flex items-center justify-center px-4">
+    <div className="w-[95%] max-w-4xl mx-auto mt-8 md:mt-10 mb-8 px-0">
       <form
         onSubmit={onHandleSubmit}
-        className="w-[420px] max-w-full bg-slate-900 text-white p-6 rounded-xl shadow-2xl space-y-4"
+        className="bg-white text-slate-900 p-6 md:p-8 rounded-4xl shadow-[0_24px_70px_rgba(15,23,42,0.10)] space-y-5 border border-blue-100"
       >
-        <h2 className="text-xl font-semibold text-center mb-2">
-          Add New Recipe
-        </h2>
+        <div className="space-y-2 text-center">
+          <p className="text-xs uppercase tracking-[0.3em] text-blue-600 font-semibold">Recipe Creator</p>
+          <h2 className="text-2xl md:text-3xl font-black text-slate-900">Add New Recipe</h2>
+          <p className="text-sm text-slate-500 max-w-2xl mx-auto">Share a polished recipe card with image, ingredients, cooking time, and clear instructions.</p>
+        </div>
 
         {/* Title */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Title</label>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1">
+            <label className="text-sm font-medium text-slate-700">Title</label>
           <input
             type="text"
             name="title"
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
           />
-        </div>
+          </div>
 
         {/* Time */}
-        <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Time</label>
+          <div className="flex flex-col gap-1">
+          <label className="text-sm font-medium text-slate-700">Time</label>
           <input
             type="text"
             name="time"
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
           />
+          </div>
         </div>
 
         {/* Ingredients */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Ingredients</label>
+          <label className="text-sm font-medium text-slate-700">Ingredients</label>
           <textarea
             name="ingredients"
             rows="4"
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            placeholder="Enter ingredients separated by commas"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none shadow-sm"
           />
         </div>
 
         {/* Instructions */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Instructions</label>
+          <label className="text-sm font-medium text-slate-700">Instructions</label>
           <textarea
             name="instructions"
             rows="4"
             onChange={onHandleChange}
-            className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            placeholder="Explain the recipe clearly"
+            className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 resize-none shadow-sm"
           />
         </div>
 
         {/* Image */}
         <div className="flex flex-col gap-1">
-          <label className="text-sm text-gray-400">Recipe Image</label>
+          <label className="text-sm font-medium text-slate-700">Recipe Image</label>
           <input
             type="file"
             name="file"
             accept="image/*"
             onChange={onHandleChange}
             disabled={isSubmitting}
-            className="text-sm text-gray-300 file:bg-slate-800 file:border-0 file:rounded-md file:px-3 file:py-1 file:text-white file:cursor-pointer disabled:opacity-50"
+            className="text-sm text-slate-500 file:bg-blue-600 file:border-0 file:rounded-xl file:px-4 file:py-2 file:text-white file:cursor-pointer disabled:opacity-50 file:font-semibold"
           />
           
           {/* Image Preview */}
           {imagePreview && (
             <div className="mt-2">
-              <p className="text-xs text-gray-400 mb-2">Preview:</p>
-              <div className="relative w-full h-48 bg-slate-700 rounded-md overflow-hidden">
+              <p className="text-xs text-slate-500 mb-2">Preview:</p>
+              <div className="relative w-full h-56 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
                 <img
                   src={imagePreview}
                   alt="Recipe preview"
@@ -217,7 +223,7 @@ export default function AddFoodRecipe() {
                     const fileInput = document.querySelector('input[name="file"]')
                     if (fileInput) fileInput.value = ''
                   }}
-                  className="absolute top-2 right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs transition"
+                  className="absolute top-3 right-3 bg-red-500 hover:bg-red-600 text-white rounded-full w-7 h-7 flex items-center justify-center text-xs transition shadow"
                 >
                   ✕
                 </button>
@@ -230,7 +236,7 @@ export default function AddFoodRecipe() {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition py-2 rounded-md font-semibold mt-2 flex items-center justify-center"
+          className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-300 disabled:to-blue-300 disabled:cursor-not-allowed transition py-3 rounded-xl font-semibold mt-2 flex items-center justify-center text-white shadow-lg shadow-blue-200"
         >
           {isSubmitting ? (
             <>

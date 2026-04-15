@@ -101,26 +101,29 @@ export default function InputForm({ setIsOpen }) {
   return (
     <form
       onSubmit={handleOnSubmit}
-      className="w-full text-white space-y-5"
+      className="w-full text-slate-900 space-y-5"
     >
-      <h2 className="text-xl font-semibold text-center">
+      <div className="text-center space-y-2">
+        <h2 className="text-2xl font-bold tracking-tight">
         {isSignUp ? "Create Account" : "Welcome Back"}
-      </h2>
+        </h2>
+        <p className="text-sm text-slate-500">Sign in to save recipes, favorites, and AI generations.</p>
+      </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-gray-400">Email</label>
+        <label className="text-sm font-medium text-slate-700">Email</label>
         <input
           type="email"
           required
           value={formData.email}
           onChange={handleInputChange('email')}
           disabled={isLoading}
-          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <label className="text-sm text-gray-400">Password</label>
+        <label className="text-sm font-medium text-slate-700">Password</label>
         <input
           type="password"
           required
@@ -128,10 +131,10 @@ export default function InputForm({ setIsOpen }) {
           value={formData.password}
           onChange={handleInputChange('password')}
           disabled={isLoading}
-          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-white border border-slate-300 rounded-xl px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
         />
         {isSignUp && (
-          <p className="text-xs text-gray-500">Password must be at least 6 characters long</p>
+          <p className="text-xs text-slate-500">Password must be at least 6 characters long</p>
         )}
       </div>
 
@@ -146,7 +149,7 @@ export default function InputForm({ setIsOpen }) {
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed transition py-2 rounded-md font-semibold flex items-center justify-center"
+        className="w-full bg-linear-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 disabled:from-blue-300 disabled:to-blue-300 disabled:cursor-not-allowed transition py-3 rounded-xl font-semibold flex items-center justify-center text-white shadow-lg shadow-blue-200"
       >
         {isLoading ? (
           <>
@@ -163,7 +166,7 @@ export default function InputForm({ setIsOpen }) {
 
       <p
         onClick={toggleMode}
-        className="text-sm text-blue-400 text-center cursor-pointer hover:underline"
+        className="text-sm text-blue-600 text-center cursor-pointer hover:underline font-medium"
       >
         {isSignUp ? "Already have an account? Login" : "Create new account"}
       </p>

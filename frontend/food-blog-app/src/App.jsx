@@ -10,6 +10,8 @@ const MainNavigation = lazy(() => import('./components/MainNavigation'))
 const AddFoodRecipe = lazy(() => import('./pages/AddFoodRecipe'))
 const EditRecipe = lazy(() => import('./pages/EditRecipe'))
 const RecipeDetails = lazy(() => import('./pages/RecipeDetails'))
+const AIRecipe = lazy(() => import('./pages/AIRecipe'))
+const RouteError = lazy(() => import('./pages/RouteError'))
 
 // Loading fallback component
 const PageLoader = () => (
@@ -21,30 +23,39 @@ const PageLoader = () => (
   </div>
 )
 const getAllRecipes = async () => {
-  let allRecipes = []
-  await axios.get(`${BASE_URL}/recipe`).then(res => {
-    allRecipes = res.data
-  })
-  return allRecipes
+  try {
+    const res = await axios.get(`${BASE_URL}/recipe`, { timeout: 12000 })
+    return Array.isArray(res.data) ? res.data : []
+  } catch (error) {
+    console.error('Error fetching recipes:', error)
+    // Keep homepage usable even when backend is temporarily unreachable.
+    return []
+  }
 }
 
 const getMyRecipes = async () => {
-  let user = JSON.parse(localStorage.getItem("user"))
-  let allRecipes = await getAllRecipes()
+  const user = JSON.parse(localStorage.getItem("user"))
+  if (!user?._id) return []
+
+  const allRecipes = await getAllRecipes()
   return allRecipes.filter(item => item.createdBy === user._id)
 }
 
 const getFavRecipes = () => {
-  return JSON.parse(localStorage.getItem("fav"))
+  const fav = JSON.parse(localStorage.getItem("fav"))
+  return Array.isArray(fav) ? fav : []
 }
 
 const getRecipe = async ({ params }) => {
   try {
     // Now gets recipe with user data in single API call (optimized)
-    const response = await axios.get(`${BASE_URL}/recipe/${params.id}`)
+    const response = await axios.get(`${BASE_URL}/recipe/${params.id}`, { timeout: 12000 })
     return response.data // Already includes createdBy.email from populate
   } catch (error) {
     console.error('Error fetching recipe:', error)
+    if (error?.code === 'ERR_NETWORK') {
+      throw new Error('Backend is not reachable. Start backend server and retry.')
+    }
     throw new Error('Failed to load recipe')
   }
 }
@@ -53,11 +64,13 @@ const router = createBrowserRouter([
   {
     path: "/",
     element: <MainNavigation />,
+    errorElement: <RouteError />,
     children: [
       { path: "/", element: <Home />, loader: getAllRecipes },
       { path: "/myRecipe", element: <Home />, loader: getMyRecipes },
       { path: "/favRecipe", element: <Home />, loader: getFavRecipes },
       { path: "/addRecipe", element: <AddFoodRecipe /> },
+      { path: '/aiRecipe', element: <AIRecipe /> },
       { path: "/editRecipe/:id", element: <EditRecipe /> },
       { path: "/recipe/:id", element: <RecipeDetails />, loader: getRecipe }
     ]

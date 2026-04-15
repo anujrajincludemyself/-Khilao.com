@@ -1,12 +1,17 @@
 const Recipes=require("../models/recipe")
 const { cloudinary, upload } = require('../config/cloudinary')
 
+const isRecipeOwner = (recipe, userId) => {
+    if (!recipe || !userId) return false
+    return String(recipe.createdBy) === String(userId)
+}
+
 const getRecipes=async(req,res)=>{
     try {
         const limit = parseInt(req.query.limit) || 50
         const skip = parseInt(req.query.skip) || 0
         
-        const recipes = await Recipes.find()
+        const recipes = await Recipes.find({ isPublic: { $ne: false } })
             .select('title ingredients instructions time coverImage createdBy createdAt')
             .sort({ createdAt: -1 })
             .limit(limit)
@@ -110,6 +115,10 @@ const addRecipe=async(req,res)=>{
 
 const editRecipe=async(req,res)=>{
     try {
+        if(!req.user || !req.user.id) {
+            return res.status(401).json({error:"Authentication required"})
+        }
+
         console.log('Edit recipe request:', {
             body: req.body,
             file: req.file,
@@ -121,6 +130,10 @@ const editRecipe=async(req,res)=>{
 
         if(!recipe){
             return res.status(404).json({error:"Recipe not found"})
+        }
+
+        if (!isRecipeOwner(recipe, req.user.id)) {
+            return res.status(403).json({error:"You can only edit your own recipe"})
         }
 
         // Handle ingredients - if it comes as a string, convert to array
@@ -169,11 +182,19 @@ const editRecipe=async(req,res)=>{
 
 const deleteRecipe=async(req,res)=>{
     try{
+        if(!req.user || !req.user.id) {
+            return res.status(401).json({error:"Authentication required"})
+        }
+
         console.log('Delete recipe request:', req.params.id)
         const recipe = await Recipes.findById(req.params.id)
         
         if(!recipe){
             return res.status(404).json({error:"Recipe not found"})
+        }
+
+        if (!isRecipeOwner(recipe, req.user.id)) {
+            return res.status(403).json({error:"You can only delete your own recipe"})
         }
         
         // Delete recipe from database first
