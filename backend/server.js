@@ -31,7 +31,7 @@ app.get('/health', (req, res) => {
 
 // Self-ping mechanism to keep Render free tier alive
 if (process.env.NODE_ENV === 'production') {
-  const RENDER_URL = process.env.RENDER_URL || 'https://foodewe-1.onrender.com'
+  const RENDER_URL = process.env.RENDER_URL || 'https://khilao-com-e5uj.onrender.com'
   const PING_INTERVAL = 14 * 60 * 1000 // 14 minutes
 
   setInterval(() => {

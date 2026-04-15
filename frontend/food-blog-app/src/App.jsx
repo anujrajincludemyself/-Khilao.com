@@ -2,6 +2,7 @@ import React, { lazy, Suspense } from 'react'
 import './App.css'
 import { createBrowserRouter, RouterProvider } from "react-router-dom"
 import axios from 'axios'
+import BASE_URL from './config'
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
@@ -19,10 +20,6 @@ const PageLoader = () => (
     </div>
   </div>
 )
-
-
-const BASE_URL = "https://khilao-com.onrender.com";
-
 const getAllRecipes = async () => {
   let allRecipes = []
   await axios.get(`${BASE_URL}/recipe`).then(res => {

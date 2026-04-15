@@ -2,9 +2,7 @@ import React from 'react'
 import profileImg from '../assets/profile.png'
 import food from '../assets/foodRecipe.png'
 import { useLoaderData } from 'react-router-dom'
-
-// ✅ add this line
-const BASE_URL = "https://khilao-com.onrender.com";
+import BASE_URL from '../config'
 
 export default function RecipeDetails() {
   const recipe = useLoaderData()
