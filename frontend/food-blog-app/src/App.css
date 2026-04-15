@@ -29,3 +29,18 @@
 	animation: fadeUp 0.45s ease-out both;
 }
 
+@keyframes slowSpin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.hero-bowl-spin {
+	animation: slowSpin 14s linear infinite;
+	transform-origin: center;
+	will-change: transform;
+}
+

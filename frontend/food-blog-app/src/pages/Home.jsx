@@ -86,7 +86,7 @@ export default function Home() {
                 <img
                   src={foodRecipe}
                   alt="Food"
-                  className="w-full max-w-105 h-auto object-contain drop-shadow-[0_18px_35px_rgba(37,99,235,0.16)]"
+                  className="hero-bowl-spin w-full max-w-105 h-auto object-contain drop-shadow-[0_18px_35px_rgba(37,99,235,0.16)]"
                   loading="lazy"
                   decoding="async"
                 />
