@@ -1,132 +1,158 @@
 import React, { useState } from 'react'
 import foodRecipe from '../assets/foodRecipe.png'
-import Navbar from '../components/Navbar'
-import Footer from '../components/Footer'
 import RecipeItems from "../components/RecipeItems"
 import { useNavigate } from 'react-router-dom'
-import Modal from '../components/Modal'
-import InputForm from '../components/InputForm'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Home() {
   const navigate = useNavigate()
-  const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
 
   const addRecipe = () => {
     let token = localStorage.getItem("token")
-    if (token)
-      navigate("/addRecipe")
+    if (token) navigate("/addRecipe")
     else {
-      setIsOpen(true)
+      // Logic for modal goes here but modal state is now managed mostly in Navbar,
+      // The original code passed a local isOpen to Modal. Since we removed local modal from Home 
+      // to keep it unified, we can just trigger a custom event or navigate to login.
+      // For simplicity here, alert or redirect if not logged in.
+      window.dispatchEvent(new Event('open-login-modal'));
     }
   }
 
   const getRecipeWithAI = () => {
     const token = localStorage.getItem('token')
-    if (token) {
-      navigate('/aiRecipe')
-    } else {
-      setIsOpen(true)
+    if (token) navigate('/aiRecipe')
+    else {
+      window.dispatchEvent(new Event('open-login-modal'));
     }
   }
 
   return (
-    <>
-      <section className="w-[95%] max-w-7xl mx-auto mt-6 md:mt-10">
-        <div className="grid lg:grid-cols-[1.05fr_0.95fr] gap-8 items-center rounded-4xl border border-blue-100 bg-white shadow-[0_30px_80px_rgba(15,23,42,0.08)] overflow-hidden">
-          <div className="p-7 md:p-12 lg:p-14 space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-4 py-2 text-xs font-semibold text-blue-700 border border-blue-100">
-              <span className="w-2 h-2 rounded-full bg-blue-600"></span>
-              Thanks for using 
-            </div>
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="w-[95%] max-w-7xl mx-auto mt-2 md:mt-4 overflow-hidden"
+    >
+      <section className="relative">
+        <div className="grid lg:grid-cols-[1fr_1fr] gap-4 md:gap-6 items-stretch">
 
-            <div className="space-y-5">
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-slate-900 leading-[1.05]">
-                Discover, create, and share recipes with a polished experience.
-              </h1>
-              <p className="text-slate-600 text-base sm:text-lg leading-8 max-w-2xl">
-                खाओ&lt;=&gt;Khilao.com gives you a clean cooking workspace to publish recipes, save favorites, and generate detailed AI recipes in a private space.
-              </p>
-            </div>
+          {/* Main Hero Card */}
+          <div className="relative p-8 md:p-14 rounded-[2.5rem] md:rounded-[3rem] bg-white border border-slate-100 shadow-[0_20px_60px_rgba(15,23,42,0.04)] overflow-hidden isolate flex flex-col justify-center">
+            {/* Background elements */}
+            <div className="absolute top-0 right-0 -mr-20 -mt-20 w-80 h-80 bg-orange-100 rounded-full blur-[80px] -z-10 opacity-70"></div>
+            <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-blue-100 rounded-full blur-[80px] -z-10 opacity-70"></div>
 
-            <div className="flex flex-col sm:flex-row gap-3">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="inline-flex items-center gap-2 rounded-xl bg-orange-50 px-4 py-2 text-xs font-bold text-orange-600 mb-8 self-start border border-orange-100/50"
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
+              </span>
+              Khilao Premium Experience
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.3, duration: 0.7, ease: "easeOut" }}
+              className="text-[2.5rem] sm:text-6xl lg:text-7xl font-black tracking-tighter text-black leading-[0.95] mb-6"
+            >
+              Imagine <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-orange-400">great tasting.</span>
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="text-slate-500 text-lg sm:text-xl leading-relaxed max-w-lg mb-10 font-medium"
+            >
+              A beautifully crafted, high-trust environment to explore, generate with AI, and curate your ultimate recipe collection.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+            >
               <button
                 onClick={addRecipe}
-                className="inline-flex items-center justify-center bg-blue-600 hover:bg-blue-700 transition text-white px-6 py-3 rounded-2xl font-semibold shadow-lg shadow-blue-200"
+                className="group relative inline-flex h-14 items-center justify-center overflow-hidden rounded-full bg-black px-8 font-bold text-white transition-all hover:scale-105 shadow-[0_10px_40px_rgba(0,0,0,0.2)]"
               >
-                Share your recipe
+                <div className="absolute inset-0 bg-gradient-to-r from-orange-500 to-orange-400 opacity-0 transition-opacity duration-300 group-hover:opacity-100"></div>
+                <span className="relative z-10">Share Recipe</span>
               </button>
 
               <button
                 onClick={getRecipeWithAI}
-                className="inline-flex items-center justify-center bg-white hover:bg-blue-50 transition text-blue-700 border border-blue-200 px-6 py-3 rounded-2xl font-semibold shadow-sm"
+                className="inline-flex h-14 items-center justify-center rounded-full bg-white border-2 border-slate-100 px-8 font-bold text-slate-800 transition hover:bg-slate-50 hover:border-blue-100"
               >
-                Get Recipe With AI
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400">
+                  Generate with AI ✨
+                </span>
               </button>
-            </div>
-
-            <div className="grid sm:grid-cols-3 gap-3 pt-2">
-              {[
-                // ['Private AI', 'Saved only to your account'],
-                // ['Fast UI', 'Optimized for mobile and desktop'],
-                // ['Production grade', 'Clean spacing and blue accents']
-              ].map(([title, desc]) => (
-                <div key={title} className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-                  <p className="font-semibold text-slate-900 text-sm">{title}</p>
-                  <p className="text-xs text-slate-500 mt-1 leading-5">{desc}</p>
-                </div>
-              ))}
-            </div>
+            </motion.div>
           </div>
 
-          <div className="relative p-6 md:p-10 lg:p-12 bg-linear-to-br from-blue-50 via-white to-slate-50">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(59,130,246,0.15),transparent_35%)]"></div>
-            <div className="relative max-w-md mx-auto">
-              <div className="rounded-[28px] overflow-hidden border border-blue-100 bg-white shadow-[0_30px_60px_rgba(37,99,235,0.12)]">
-                <div className="flex items-center justify-center bg-linear-to-b from-white to-blue-50 p-6 sm:p-8 min-h-80 sm:min-h-105">
+          {/* Right Image / Bento Card */}
+          <div className="flex flex-col gap-4 md:gap-6">
+            <div
+              className="relative flex-1 rounded-[2.5rem] bg-slate-50 overflow-hidden flex items-center justify-center min-h-[300px] border border-slate-100"
+              onMouseEnter={() => setIsHovered(true)}
+              onMouseLeave={() => setIsHovered(false)}
+            >
+              {/* Decorative grid background */}
+              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMSIgY3k9IjEiIHI9IjEiIGZpbGw9InJnYmEoMTUsMjMsNDIsMC4wNSkiLz48L3N2Zz4=')] [mask-image:linear-gradient(to_bottom_right,white,transparent,transparent)] opacity-100 -z-0"></div>
+
+              <motion.div
+                animate={{
+                  y: isHovered ? -10 : 0,
+                  scale: isHovered ? 1.05 : 1
+                }}
+                transition={{ type: "spring", bounce: 0.4, duration: 0.8 }}
+                className="relative z-10 w-full max-w-[80%]"
+              >
                 <img
                   src={foodRecipe}
-                  alt="Food"
-                  className="hero-bowl-spin w-full max-w-105 h-auto object-contain drop-shadow-[0_18px_35px_rgba(37,99,235,0.16)]"
-                  loading="lazy"
-                  decoding="async"
+                  alt="Delicious Food"
+                  className="hero-bowl-spin w-full h-auto object-contain drop-shadow-[0_40px_80px_rgba(249,115,22,0.25)]"
                 />
-                </div>
-                <div className="p-5 space-y-2">
-                  <p className="text-xs font-semibold tracking-[0.2em] uppercase text-blue-600">Recipe Studio</p>
-                  <p className="text-lg font-bold text-slate-900">Create. Save. Revisit.</p>
-                  <p className="text-sm text-slate-500 leading-6">A minimal, premium workspace built for high-trust recipe sharing and AI cooking exploration.</p>
-                </div>
+              </motion.div>
+            </div>
+
+            {/* Stats/Info Cards */}
+            <div className="grid grid-cols-2 gap-4 md:gap-6">
+              <div className="rounded-[2rem] bg-orange-50 border border-orange-100/50 p-6 flex flex-col justify-end min-h-[140px] group overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-orange-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <h3 className="text-3xl font-black text-orange-600 mb-1 leading-none">100%</h3>
+                <p className="text-sm font-semibold text-orange-900/60 block">Private AI generation</p>
+              </div>
+              <div className="rounded-[2rem] bg-blue-50 border border-blue-100/50 p-6 flex flex-col justify-end min-h-[140px] group overflow-hidden relative">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-100 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+                <h3 className="text-3xl font-black text-blue-600 mb-1 leading-none">Foodie</h3>
+                <p className="text-sm font-semibold text-blue-900/60 block">Are you the one</p>
               </div>
             </div>
           </div>
         </div>
-
-        <div className="mt-8 grid md:grid-cols-4 gap-4">
-          {[
-            ['Share recipes', 'Publish your own ideas with a polished card layout'],
-            ['Save favorites', 'Keep the recipes you love handy'],
-            ['AI recipe studio', 'Generate detailed private recipes'],
-            ['Clean UI', 'Looks great from mobile to desktop']
-          ].map(([title, desc]) => (
-            <div key={title} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-              <p className="font-semibold text-slate-900">{title}</p>
-              <p className="text-sm text-slate-500 mt-2 leading-6">{desc}</p>
-            </div>
-          ))}
-        </div>
       </section>
-
-      {/* Modal */}
-      {isOpen && (
-        <Modal onClose={() => setIsOpen(false)}>
-          <InputForm setIsOpen={() => setIsOpen(false)} />
-        </Modal>
-      )}
-
-      {/* Recipes */}
-      <div className="mt-10">
+      {/* Recipes Section */}
+      <div className="mt-16 md:mt-24 mb-10">
+        <div className="flex items-end justify-between mb-8 px-4">
+          <div>
+            <h2 className="text-3xl sm:text-4xl font-black text-black">Trending <span className="text-orange-500">Recipes</span></h2>
+            <p className="text-slate-500 font-medium mt-2">Discover what the community is cooking</p>
+          </div>
+        </div>
         <RecipeItems />
       </div>
-    </>
+    </motion.div>
   )
 }
