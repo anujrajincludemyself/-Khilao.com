@@ -12,12 +12,30 @@ export default function RecipeItems() {
   const recipes = useLoaderData()
   const [allRecipes, setAllRecipes] = useState(recipes)
   const [deletingId, setDeletingId] = useState(null)
+  const [likingId, setLikingId] = useState(null)
   const [imageErrors, setImageErrors] = useState({})
   const [isLoading, setIsLoading] = useState(false)
-  let path = window.location.pathname === "/myRecipe"
-  let favItems = JSON.parse(localStorage.getItem("fav")) ?? []
-  const [isFavRecipe, setIsFavRecipe] = useState(false)
+  const pathName = window.location.pathname
+  const isMyRecipePage = pathName === "/myRecipe"
+  const isFavPage = pathName === "/favRecipe"
   const navigate = useNavigate()
+  const isLoggedIn = Boolean(localStorage.getItem('token'))
+
+  const getOwnerId = (recipe) => {
+    if (!recipe?.createdBy) return null
+    return typeof recipe.createdBy === 'object' ? recipe.createdBy?._id : recipe.createdBy
+  }
+
+  const getCurrentUserId = () => {
+    try {
+      const user = JSON.parse(localStorage.getItem('user') || 'null')
+      return user?._id || null
+    } catch {
+      return null
+    }
+  }
+
+  const currentUserId = getCurrentUserId()
 
   useEffect(() => {
     if (recipes) {
@@ -30,6 +48,15 @@ export default function RecipeItems() {
     if (e) {
       e.stopPropagation()
     }
+
+    const recipeToDelete = allRecipes?.find(recipe => recipe._id === id)
+    const isOwner = recipeToDelete && String(getOwnerId(recipeToDelete)) === String(currentUserId)
+
+    if (!isOwner) {
+      alert('You can only delete recipes uploaded by you.')
+      return
+    }
+
     if (!window.confirm('Are you sure you want to delete this recipe?')) {
       return
     }
@@ -37,33 +64,72 @@ export default function RecipeItems() {
     setDeletingId(id)
     try {
       const token = localStorage.getItem('token')
+      if (!token) {
+        alert('Please login to continue.')
+        return
+      }
+
       await axios.delete(`${BASE_URL}/recipe/${id}`, {
         headers: {
           Authorization: `Bearer ${token}`
         }
       })
       setAllRecipes(recipes => recipes.filter(recipe => recipe._id !== id))
-      let filterItem = favItems.filter(recipe => recipe._id !== id)
-      localStorage.setItem("fav", JSON.stringify(filterItem))
     } catch (error) {
       console.error('Failed to delete recipe:', error)
-      alert('Failed to delete recipe. Please try again.')
+      const message = error.response?.data?.error || 'Failed to delete recipe. Please try again.'
+      alert(message)
     } finally {
       setDeletingId(null)
     }
   }
 
-  const favRecipe = (item, e) => {
+  const toggleLike = async (item, e) => {
     if (e) {
        e.stopPropagation()
     }
-    let filterItem = favItems.filter(recipe => recipe._id !== item._id)
-    favItems = favItems.some(recipe => recipe._id === item._id)
-      ? filterItem
-      : [...favItems, item]
 
-    localStorage.setItem("fav", JSON.stringify(favItems))
-    setIsFavRecipe(pre => !pre)
+    const token = localStorage.getItem('token')
+    if (!token) {
+      window.dispatchEvent(new Event('open-login-modal'))
+      return
+    }
+
+    setLikingId(item._id)
+    try {
+      const response = await axios.patch(
+        `${BASE_URL}/recipe/${item._id}/like`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      )
+
+      const liked = Boolean(response.data?.liked)
+      const likesCount = Number(response.data?.likesCount || 0)
+
+      setAllRecipes((prev) => {
+        const updated = prev.map((recipe) =>
+          recipe._id === item._id
+            ? { ...recipe, isLikedByCurrentUser: liked, likesCount }
+            : recipe
+        )
+
+        if (isFavPage && !liked) {
+          return updated.filter((recipe) => recipe._id !== item._id)
+        }
+
+        return updated
+      })
+    } catch (error) {
+      console.error('Failed to update like:', error)
+      const message = error.response?.data?.error || 'Failed to update like. Please try again.'
+      alert(message)
+    } finally {
+      setLikingId(null)
+    }
   }
 
   const handleImageError = (itemId) => {
@@ -114,8 +180,8 @@ export default function RecipeItems() {
     return (
       <div className="w-[95%] max-w-7xl mx-auto my-12 text-center py-32 rounded-[3rem] border-2 border-dashed border-slate-200 bg-white/50 backdrop-blur-sm shadow-sm relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-blue-50/50 -z-10"></div>
-        <p className="text-black text-2xl font-black mb-2">No recipes found</p>
-        <p className="text-slate-500 font-medium">Be the first to share an amazing recipe!</p>
+        <p className="text-black text-2xl font-black mb-2">{isLoggedIn ? 'No recipes found' : 'Login required'}</p>
+        <p className="text-slate-500 font-medium">{isLoggedIn ? 'Be the first to share an amazing recipe!' : 'Please login to view recipes.'}</p>
       </div>
     )
   }
@@ -129,7 +195,10 @@ export default function RecipeItems() {
     >
       <AnimatePresence>
       {
-        allRecipes.map((item, index) => (
+        allRecipes.map((item, index) => {
+          const isOwner = String(getOwnerId(item)) === String(currentUserId)
+
+          return (
           <motion.div
             layout
             variants={itemVariants}
@@ -164,17 +233,27 @@ export default function RecipeItems() {
               
               {/* Top badges/actions floating */}
               <div className="absolute top-4 right-4 flex gap-2">
-                 {/* Fav icon overlaid on image */}
-                 {!path && (
-                   <button 
-                     onClick={(e) => favRecipe(item, e)}
-                     className="w-10 h-10 rounded-full bg-white/90 backdrop-blur shadow-sm flex items-center justify-center hover:bg-white hover:scale-110 transition"
-                   >
-                     <FaHeart
-                       className={favItems.some(res => res._id === item._id) ? "text-orange-500 text-lg" : "text-slate-300 text-lg hover:text-orange-500"}
-                     />
-                   </button>
-                 )}
+                {isMyRecipePage ? (
+                  <div className="h-10 rounded-full bg-white/90 backdrop-blur shadow-sm px-3 inline-flex items-center gap-2">
+                    <FaHeart className="text-orange-500 text-base" />
+                    <span className="text-xs font-bold text-slate-700">{item.likesCount || 0}</span>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={(e) => toggleLike(item, e)}
+                    disabled={likingId === item._id}
+                    className="h-10 rounded-full bg-white/90 backdrop-blur shadow-sm px-3 inline-flex items-center gap-2 hover:bg-white hover:scale-105 transition disabled:opacity-70"
+                  >
+                    {likingId === item._id ? (
+                      <div className="w-4 h-4 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                    ) : (
+                      <FaHeart
+                        className={item.isLikedByCurrentUser ? "text-orange-500 text-base" : "text-slate-300 text-base hover:text-orange-500"}
+                      />
+                    )}
+                    <span className="text-xs font-bold text-slate-700">{item.likesCount || 0}</span>
+                  </button>
+                )}
               </div>
             </div>
 
@@ -194,39 +273,44 @@ export default function RecipeItems() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-3">
-                  {!path ? (
+                  {!isMyRecipePage ? (
                     <>
-                      {/* Delete button for all recipes if admin, else standard */}
-                      {deletingId === item._id ? (
-                        <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <button 
-                           onClick={(e) => onDelete(item._id, e)}
-                           className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
-                           title="Delete recipe"
-                        >
-                           <MdDelete size={18} />
-                        </button>
+                      {isOwner && (
+                        deletingId === item._id ? (
+                          <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <button 
+                            onClick={(e) => onDelete(item._id, e)}
+                            className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
+                            title="Delete recipe"
+                          >
+                            <MdDelete size={18} />
+                          </button>
+                        )
                       )}
                     </>
                   ) : (
                     <>
-                      <Link
-                        to={`/editRecipe/${item._id}`}
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition"
-                      >
-                        <FaEdit size={18} />
-                      </Link>
-                      {deletingId === item._id ? (
-                        <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-                      ) : (
-                        <button 
-                           onClick={(e) => onDelete(item._id, e)}
-                           className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
+                      {isOwner && (
+                        <Link
+                          to={`/editRecipe/${item._id}`}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-xl transition"
                         >
-                           <MdDelete size={18} />
-                        </button>
+                          <FaEdit size={18} />
+                        </Link>
+                      )}
+                      {isOwner && (
+                        deletingId === item._id ? (
+                          <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+                        ) : (
+                          <button 
+                            onClick={(e) => onDelete(item._id, e)}
+                            className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
+                          >
+                            <MdDelete size={18} />
+                          </button>
+                        )
                       )}
                     </>
                   )}
@@ -234,7 +318,8 @@ export default function RecipeItems() {
               </div>
             </div>
           </motion.div>
-        ))
+          )
+        })
       }
       </AnimatePresence>
     </motion.div>

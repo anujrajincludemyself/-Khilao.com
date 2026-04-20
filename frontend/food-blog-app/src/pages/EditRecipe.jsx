@@ -14,8 +14,20 @@ export default function EditRecipe() {
 
   useEffect(() => {
     const getData = async () => {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        alert('Please login first')
+        navigate('/')
+        setLoading(false)
+        return
+      }
+
       try {
-        const response = await axios.get(`${BASE_URL}/recipe/${id}`)
+        const response = await axios.get(`${BASE_URL}/recipe/${id}`, {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        })
         let res = response.data
         setRecipeData({
           title: res.title,
@@ -26,7 +38,11 @@ export default function EditRecipe() {
         setCurrentImage(res.coverImage)
       } catch (error) {
         console.error('Failed to fetch recipe:', error)
-        alert('Failed to load recipe data')
+        const errorMessage = error.response?.data?.error || 'Failed to load recipe data'
+        alert(errorMessage)
+        if (error.response?.status === 401) {
+          navigate('/')
+        }
       } finally {
         setLoading(false)
       }
@@ -184,7 +200,7 @@ export default function EditRecipe() {
               <p className="text-xs text-slate-500 mb-2">Current Image:</p>
               <div className="relative w-full h-56 bg-slate-100 rounded-2xl overflow-hidden border border-slate-200">
                 <img
-                  src={`${BASE_URL}/images/${currentImage}`}
+                  src={currentImage.startsWith('http') ? currentImage : `${BASE_URL}/images/${currentImage}`}
                   alt="Current recipe image"
                   className="w-full h-full object-cover"
                   onError={(e) => {

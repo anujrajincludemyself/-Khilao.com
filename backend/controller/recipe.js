@@ -8,19 +8,33 @@ const isRecipeOwner = (recipe, userId) => {
 
 const getRecipes=async(req,res)=>{
     try {
+        const userId = req.user?.id
         const limit = parseInt(req.query.limit) || 50
         const skip = parseInt(req.query.skip) || 0
         
         const recipes = await Recipes.find({ isPublic: { $ne: false } })
-            .select('title ingredients instructions time coverImage createdBy createdAt')
+            .select('title ingredients instructions time coverImage createdBy createdAt likesCount likedBy')
             .sort({ createdAt: -1 })
             .limit(limit)
             .skip(skip)
             .lean() // Convert to plain JS objects (faster)
+
+        const mappedRecipes = recipes.map((recipe) => {
+            const isLikedByCurrentUser = (recipe.likedBy || []).some(
+                (likedUserId) => String(likedUserId) === String(userId)
+            )
+
+            const { likedBy, ...rest } = recipe
+            return {
+                ...rest,
+                likesCount: typeof recipe.likesCount === 'number' ? recipe.likesCount : (recipe.likedBy || []).length,
+                isLikedByCurrentUser
+            }
+        })
         
-        // Set cache headers
-        res.set('Cache-Control', 'public, max-age=300') // Cache for 5 minutes
-        return res.json(recipes)
+        // Authenticated response should not be publicly cached.
+        res.set('Cache-Control', 'private, max-age=60')
+        return res.json(mappedRecipes)
     } catch(error) {
         console.error('Error fetching recipes:', error)
         return res.status(500).json({ error: 'Failed to fetch recipes' })
@@ -29,6 +43,7 @@ const getRecipes=async(req,res)=>{
 
 const getRecipe=async(req,res)=>{
     try {
+        const userId = req.user?.id
         const recipe = await Recipes.findById(req.params.id)
             .populate('createdBy', 'email') // Get user email in same query
             .lean()
@@ -37,12 +52,60 @@ const getRecipe=async(req,res)=>{
             return res.status(404).json({ error: 'Recipe not found' })
         }
         
-        // Set cache headers
-        res.set('Cache-Control', 'public, max-age=600') // Cache for 10 minutes
-        res.json(recipe)
+        const isLikedByCurrentUser = (recipe.likedBy || []).some(
+            (likedUserId) => String(likedUserId) === String(userId)
+        )
+
+        const { likedBy, ...rest } = recipe
+        const recipePayload = {
+            ...rest,
+            likesCount: typeof recipe.likesCount === 'number' ? recipe.likesCount : (recipe.likedBy || []).length,
+            isLikedByCurrentUser
+        }
+
+        res.set('Cache-Control', 'private, max-age=60')
+        res.json(recipePayload)
     } catch(error) {
         console.error('Error fetching recipe:', error)
         return res.status(500).json({ error: 'Failed to fetch recipe' })
+    }
+}
+
+const toggleLikeRecipe = async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) {
+            return res.status(401).json({ error: 'Authentication required' })
+        }
+
+        const recipe = await Recipes.findById(req.params.id)
+        if (!recipe) {
+            return res.status(404).json({ error: 'Recipe not found' })
+        }
+
+        const userId = String(req.user.id)
+        const alreadyLiked = (recipe.likedBy || []).some(
+            (likedUserId) => String(likedUserId) === userId
+        )
+
+        if (alreadyLiked) {
+            recipe.likedBy = (recipe.likedBy || []).filter(
+                (likedUserId) => String(likedUserId) !== userId
+            )
+        } else {
+            recipe.likedBy.push(req.user.id)
+        }
+
+        recipe.likesCount = recipe.likedBy.length
+        await recipe.save()
+
+        return res.status(200).json({
+            status: 'ok',
+            liked: !alreadyLiked,
+            likesCount: recipe.likesCount
+        })
+    } catch (error) {
+        console.error('Error toggling like:', error)
+        return res.status(500).json({ error: 'Failed to update like' })
     }
 }
 
@@ -228,4 +291,4 @@ const deleteRecipe=async(req,res)=>{
     }
 }
 
-module.exports={getRecipes,getRecipe,addRecipe,editRecipe,deleteRecipe,upload}
+module.exports={getRecipes,getRecipe,addRecipe,editRecipe,deleteRecipe,toggleLikeRecipe,upload}

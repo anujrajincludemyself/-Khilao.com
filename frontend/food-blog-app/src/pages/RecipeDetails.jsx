@@ -4,6 +4,7 @@ import { useLoaderData } from 'react-router-dom'
 import BASE_URL from '../config'
 import { motion } from 'framer-motion'
 import { BsStopwatchFill } from "react-icons/bs"
+import { FaHeart } from "react-icons/fa6"
 
 export default function RecipeDetails() {
   const recipe = useLoaderData()
@@ -79,6 +80,14 @@ export default function RecipeDetails() {
                    <div>
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Time</p>
                       <p className="text-lg font-black">{recipe.time || 'N/A'}</p>
+                   </div>
+                </div>
+
+                <div className="flex items-center gap-3 mb-6 text-slate-900">
+                   <FaHeart size={24} className="text-orange-500"/>
+                   <div>
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Total Likes</p>
+                      <p className="text-lg font-black">{recipe.likesCount || 0}</p>
                    </div>
                 </div>
                 

@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react'
 import './App.css'
-import { createBrowserRouter, RouterProvider } from "react-router-dom"
+import { createBrowserRouter, redirect, RouterProvider } from "react-router-dom"
 import axios from 'axios'
 import BASE_URL from './config'
 
@@ -22,13 +22,32 @@ const PageLoader = () => (
     </div>
   </div>
 )
+
+const getAuthToken = () => localStorage.getItem('token')
+
+const getAuthHeaders = () => {
+  const token = getAuthToken()
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+const getCreatorId = (recipe) => {
+  if (!recipe?.createdBy) return null
+  return typeof recipe.createdBy === 'object' ? recipe.createdBy?._id : recipe.createdBy
+}
+
 const getAllRecipes = async () => {
+  const token = getAuthToken()
+  if (!token) return []
+
   try {
-    const res = await axios.get(`${BASE_URL}/recipe`, { timeout: 12000 })
+    const res = await axios.get(`${BASE_URL}/recipe`, {
+      headers: getAuthHeaders(),
+      timeout: 12000
+    })
     return Array.isArray(res.data) ? res.data : []
   } catch (error) {
     console.error('Error fetching recipes:', error)
-    // Keep homepage usable even when backend is temporarily unreachable.
+    if (error.response?.status === 401) return []
     return []
   }
 }
@@ -38,21 +57,31 @@ const getMyRecipes = async () => {
   if (!user?._id) return []
 
   const allRecipes = await getAllRecipes()
-  return allRecipes.filter(item => item.createdBy === user._id)
+  return allRecipes.filter(item => String(getCreatorId(item)) === String(user._id))
 }
 
 const getFavRecipes = () => {
-  const fav = JSON.parse(localStorage.getItem("fav"))
-  return Array.isArray(fav) ? fav : []
+  return getAllRecipes().then((recipes) =>
+    recipes.filter((item) => item.isLikedByCurrentUser)
+  )
 }
 
 const getRecipe = async ({ params }) => {
+  const token = getAuthToken()
+  if (!token) return redirect('/')
+
   try {
     // Now gets recipe with user data in single API call (optimized)
-    const response = await axios.get(`${BASE_URL}/recipe/${params.id}`, { timeout: 12000 })
+    const response = await axios.get(`${BASE_URL}/recipe/${params.id}`, {
+      headers: getAuthHeaders(),
+      timeout: 12000
+    })
     return response.data // Already includes createdBy.email from populate
   } catch (error) {
     console.error('Error fetching recipe:', error)
+    if (error.response?.status === 401) {
+      return redirect('/')
+    }
     if (error?.code === 'ERR_NETWORK') {
       throw new Error('Backend is not reachable. Start backend server and retry.')
     }

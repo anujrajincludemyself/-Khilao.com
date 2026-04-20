@@ -30,6 +30,15 @@ const recipeSchema=mongoose.Schema({
     createdBy:{
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"
+    },
+    likedBy: {
+        type: [mongoose.Schema.Types.ObjectId],
+        ref: "User",
+        default: []
+    },
+    likesCount: {
+        type: Number,
+        default: 0
     }
 
 },{timestamps:true})
@@ -38,5 +47,6 @@ const recipeSchema=mongoose.Schema({
 recipeSchema.index({ createdBy: 1, createdAt: -1 })
 recipeSchema.index({ createdAt: -1 })
 recipeSchema.index({ title: 'text' }) // For text search
+recipeSchema.index({ likesCount: -1 })
 
 module.exports=mongoose.model("Recipes",recipeSchema)
