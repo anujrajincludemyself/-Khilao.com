@@ -42,6 +42,7 @@ const getAllRecipes = async () => {
   try {
     const res = await axios.get(`${BASE_URL}/recipe`, {
       headers: getAuthHeaders(),
+      params: { t: Date.now() },
       timeout: 12000
     })
     return Array.isArray(res.data) ? res.data : []
@@ -74,6 +75,7 @@ const getRecipe = async ({ params }) => {
     // Now gets recipe with user data in single API call (optimized)
     const response = await axios.get(`${BASE_URL}/recipe/${params.id}`, {
       headers: getAuthHeaders(),
+      params: { t: Date.now() },
       timeout: 12000
     })
     return response.data // Already includes createdBy.email from populate

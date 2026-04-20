@@ -32,8 +32,8 @@ const getRecipes=async(req,res)=>{
             }
         })
         
-        // Authenticated response should not be publicly cached.
-        res.set('Cache-Control', 'private, max-age=60')
+        // Like status is user-specific and changes frequently; always return fresh data.
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private')
         return res.json(mappedRecipes)
     } catch(error) {
         console.error('Error fetching recipes:', error)
@@ -63,7 +63,8 @@ const getRecipe=async(req,res)=>{
             isLikedByCurrentUser
         }
 
-        res.set('Cache-Control', 'private, max-age=60')
+        // Like status is user-specific and changes frequently; always return fresh data.
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, private')
         res.json(recipePayload)
     } catch(error) {
         console.error('Error fetching recipe:', error)
