@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useLoaderData, useNavigate } from 'react-router-dom'
 import { BsStopwatchFill } from "react-icons/bs"
 import { FaHeart } from "react-icons/fa6"
@@ -35,7 +35,7 @@ export default function RecipeItems() {
     }
   }
 
-  const currentUserId = getCurrentUserId()
+  const currentUserId = useMemo(() => getCurrentUserId(), [])
 
   useEffect(() => {
     if (recipes) {
@@ -44,13 +44,10 @@ export default function RecipeItems() {
     }
   }, [recipes])
 
-  const onDelete = async (id, e) => {
+  const onDelete = useCallback(async (id, isOwner, e) => {
     if (e) {
       e.stopPropagation()
     }
-
-    const recipeToDelete = allRecipes?.find(recipe => recipe._id === id)
-    const isOwner = recipeToDelete && String(getOwnerId(recipeToDelete)) === String(currentUserId)
 
     if (!isOwner) {
       alert('You can only delete recipes uploaded by you.')
@@ -75,6 +72,7 @@ export default function RecipeItems() {
         }
       })
       setAllRecipes(recipes => recipes.filter(recipe => recipe._id !== id))
+      window.dispatchEvent(new Event('recipes:invalidate'))
     } catch (error) {
       console.error('Failed to delete recipe:', error)
       const message = error.response?.data?.error || 'Failed to delete recipe. Please try again.'
@@ -82,9 +80,9 @@ export default function RecipeItems() {
     } finally {
       setDeletingId(null)
     }
-  }
+  }, [])
 
-  const toggleLike = async (item, e) => {
+  const toggleLike = useCallback(async (item, e) => {
     if (e) {
        e.stopPropagation()
     }
@@ -123,6 +121,7 @@ export default function RecipeItems() {
 
         return updated
       })
+      window.dispatchEvent(new Event('recipes:invalidate'))
     } catch (error) {
       console.error('Failed to update like:', error)
       const message = error.response?.data?.error || 'Failed to update like. Please try again.'
@@ -130,15 +129,15 @@ export default function RecipeItems() {
     } finally {
       setLikingId(null)
     }
-  }
+  }, [isFavPage])
 
-  const handleImageError = (itemId) => {
+  const handleImageError = useCallback((itemId) => {
     setImageErrors(prev => ({ ...prev, [itemId]: true }))
-  }
+  }, [])
 
-  const handleCardClick = (id) => {
+  const handleCardClick = useCallback((id) => {
      navigate(`/recipe/${id}`)
-  }
+  }, [navigate])
 
   const gridVariants = {
     hidden: { opacity: 0 },
@@ -280,7 +279,7 @@ export default function RecipeItems() {
                           <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           <button 
-                            onClick={(e) => onDelete(item._id, e)}
+                            onClick={(e) => onDelete(item._id, isOwner, e)}
                             className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
                             title="Delete recipe"
                           >
@@ -305,7 +304,7 @@ export default function RecipeItems() {
                           <div className="w-5 h-5 border-2 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
                         ) : (
                           <button 
-                            onClick={(e) => onDelete(item._id, e)}
+                            onClick={(e) => onDelete(item._id, isOwner, e)}
                             className="text-slate-400 hover:text-red-500 hover:bg-red-50 p-2 rounded-xl transition cursor-pointer"
                           >
                             <MdDelete size={18} />

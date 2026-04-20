@@ -8,9 +8,6 @@ export default function AddFoodRecipe() {
   const [imagePreview, setImagePreview] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const navigate = useNavigate()
-  
-  // Debug current recipe data
-  console.log('Current recipe data:', recipeData)
 
   const onHandleChange = (e) => {
     let val =
@@ -30,7 +27,6 @@ export default function AddFoodRecipe() {
       reader.readAsDataURL(file)
     }
 
-    console.log(`Field ${e.target.name} updated:`, val)
     setRecipeData(pre => ({ ...pre, [e.target.name]: val }))
   }
 
@@ -88,14 +84,6 @@ export default function AddFoodRecipe() {
         .join(',')
       formData.append('ingredients', ingredientsString)
       
-      console.log('Submitting recipe data:', {
-        title: recipeData.title,
-        time: recipeData.time,
-        ingredients: ingredientsString,
-        instructions: recipeData.instructions,
-        file: recipeData.file?.name
-      })
-      
       const response = await axios.post(
         `${BASE_URL}/recipe`,
         formData,
@@ -108,7 +96,7 @@ export default function AddFoodRecipe() {
         }
       )
       
-      console.log('Recipe added successfully:', response.data)
+      window.dispatchEvent(new Event('recipes:invalidate'))
       alert('Recipe added successfully!')
       navigate("/")
     } catch (error) {

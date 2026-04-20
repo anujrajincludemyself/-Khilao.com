@@ -1,8 +1,14 @@
-import React, { lazy, Suspense } from 'react'
+import React, { lazy, Suspense, useEffect } from 'react'
 import './App.css'
 import { createBrowserRouter, redirect, RouterProvider } from "react-router-dom"
 import axios from 'axios'
 import BASE_URL from './config'
+
+const RECIPE_CACHE_TTL_MS = 45 * 1000
+const recipeListCache = new Map()
+const recipeDetailCache = new Map()
+const inFlightListRequests = new Map()
+const inFlightDetailRequests = new Map()
 
 // Lazy load pages for code splitting
 const Home = lazy(() => import('./pages/Home'))
@@ -25,6 +31,15 @@ const PageLoader = () => (
 
 const getAuthToken = () => localStorage.getItem('token')
 
+const getCurrentUserId = () => {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || 'null')
+    return user?._id ? String(user._id) : 'anonymous'
+  } catch {
+    return 'anonymous'
+  }
+}
+
 const getAuthHeaders = () => {
   const token = getAuthToken()
   return token ? { Authorization: `Bearer ${token}` } : {}
@@ -35,21 +50,67 @@ const getCreatorId = (recipe) => {
   return typeof recipe.createdBy === 'object' ? recipe.createdBy?._id : recipe.createdBy
 }
 
+const getListCacheKey = (userId) => `list:${userId}`
+const getDetailCacheKey = (userId, recipeId) => `detail:${userId}:${recipeId}`
+
+const getFreshCacheValue = (cacheMap, key) => {
+  const entry = cacheMap.get(key)
+  if (!entry) return null
+  if (Date.now() - entry.timestamp > RECIPE_CACHE_TTL_MS) {
+    cacheMap.delete(key)
+    return null
+  }
+  return entry.data
+}
+
+const setCacheValue = (cacheMap, key, data) => {
+  cacheMap.set(key, {
+    timestamp: Date.now(),
+    data
+  })
+}
+
+const invalidateRecipeCaches = () => {
+  recipeListCache.clear()
+  recipeDetailCache.clear()
+  inFlightListRequests.clear()
+  inFlightDetailRequests.clear()
+}
+
+if (typeof window !== 'undefined' && !window.__recipesInvalidateHooked) {
+  window.__recipesInvalidateHooked = true
+  window.addEventListener('recipes:invalidate', invalidateRecipeCaches)
+}
+
 const getAllRecipes = async () => {
   const token = getAuthToken()
   if (!token) return []
 
+  const userId = getCurrentUserId()
+  const cacheKey = getListCacheKey(userId)
+  const cached = getFreshCacheValue(recipeListCache, cacheKey)
+  if (cached) return cached
+
+  const inFlight = inFlightListRequests.get(cacheKey)
+  if (inFlight) return inFlight
+
   try {
-    const res = await axios.get(`${BASE_URL}/recipe`, {
+    const requestPromise = axios.get(`${BASE_URL}/recipe`, {
       headers: getAuthHeaders(),
-      params: { t: Date.now() },
       timeout: 12000
     })
-    return Array.isArray(res.data) ? res.data : []
+
+    inFlightListRequests.set(cacheKey, requestPromise)
+    const res = await requestPromise
+    const normalized = Array.isArray(res.data) ? res.data : []
+    setCacheValue(recipeListCache, cacheKey, normalized)
+    return normalized
   } catch (error) {
     console.error('Error fetching recipes:', error)
     if (error.response?.status === 401) return []
     return []
+  } finally {
+    inFlightListRequests.delete(cacheKey)
   }
 }
 
@@ -71,13 +132,26 @@ const getRecipe = async ({ params }) => {
   const token = getAuthToken()
   if (!token) return redirect('/')
 
+  const userId = getCurrentUserId()
+  const cacheKey = getDetailCacheKey(userId, params.id)
+  const cached = getFreshCacheValue(recipeDetailCache, cacheKey)
+  if (cached) return cached
+
+  const inFlight = inFlightDetailRequests.get(cacheKey)
+  if (inFlight) {
+    const response = await inFlight
+    return response
+  }
+
   try {
-    // Now gets recipe with user data in single API call (optimized)
-    const response = await axios.get(`${BASE_URL}/recipe/${params.id}`, {
+    const requestPromise = axios.get(`${BASE_URL}/recipe/${params.id}`, {
       headers: getAuthHeaders(),
-      params: { t: Date.now() },
       timeout: 12000
     })
+
+    inFlightDetailRequests.set(cacheKey, requestPromise)
+    const response = await requestPromise
+    setCacheValue(recipeDetailCache, cacheKey, response.data)
     return response.data // Already includes createdBy.email from populate
   } catch (error) {
     console.error('Error fetching recipe:', error)
@@ -88,6 +162,8 @@ const getRecipe = async ({ params }) => {
       throw new Error('Backend is not reachable. Start backend server and retry.')
     }
     throw new Error('Failed to load recipe')
+  } finally {
+    inFlightDetailRequests.delete(cacheKey)
   }
 }
 
@@ -109,6 +185,25 @@ const router = createBrowserRouter([
 ])
 
 export default function App() {
+  useEffect(() => {
+    const warmRoutes = () => {
+      import('./pages/Home')
+      import('./pages/AddFoodRecipe')
+      import('./pages/EditRecipe')
+      import('./pages/RecipeDetails')
+      import('./pages/AIRecipe')
+      import('./components/MainNavigation')
+    }
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      const id = window.requestIdleCallback(warmRoutes, { timeout: 1200 })
+      return () => window.cancelIdleCallback(id)
+    }
+
+    const timeoutId = setTimeout(warmRoutes, 300)
+    return () => clearTimeout(timeoutId)
+  }, [])
+
   return (
     <Suspense fallback={<PageLoader />}>
       <RouterProvider router={router} />

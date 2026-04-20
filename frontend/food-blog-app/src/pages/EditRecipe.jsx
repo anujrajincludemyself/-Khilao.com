@@ -107,6 +107,7 @@ export default function EditRecipe() {
           }
         }
       )
+      window.dispatchEvent(new Event('recipes:invalidate'))
       alert('Recipe updated successfully!')
       navigate("/myRecipe")
     } catch (error) {
