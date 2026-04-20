@@ -54,16 +54,12 @@ export default function Navbar() {
           <div className={`flex items-center justify-between h-16 px-6 transition-all duration-300 rounded-[2rem] border border-white/20 ${scrolled ? 'glass shadow-[0_8px_32px_rgba(15,23,42,0.08)]' : 'bg-white/50 backdrop-blur-md shadow-sm'}`}>
 
             {/* Logo */}
-            <NavLink to="/" className="flex items-center gap-3 shrink-0 group" onClick={() => setMenuOpen(false)}>
-              <div className="relative w-10 h-10 flex items-center justify-center">
-                <div className="absolute inset-0 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl rotate-3 group-hover:rotate-6 transition-transform shadow-lg shadow-orange-200"></div>
-                <div className="absolute inset-0 bg-black text-white rounded-2xl -rotate-3 group-hover:rotate-0 transition-transform flex items-center justify-center font-black text-lg">
-                  K
-                </div>
-              </div>
-              <div className="leading-tight flex flex-col">
-                <h2 className="text-xl font-black text-slate-900 tracking-tight">Khilao<span className="text-orange-500">.com</span></h2>
-              </div>
+            <NavLink to="/" className="flex items-center shrink-0 group" onClick={() => setMenuOpen(false)}>
+              <img
+                src="/logo.png"
+                alt="Khilao logo"
+                className="h-11 sm:h-12 w-auto object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-[1.02]"
+              />
             </NavLink>
 
             {/* Mobile Menu Toggle */}
