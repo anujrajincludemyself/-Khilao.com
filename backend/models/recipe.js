@@ -31,11 +31,10 @@ const recipeSchema=mongoose.Schema({
         type:mongoose.Schema.Types.ObjectId,
         ref:"User"
     },
-    likedBy: {
-        type: [mongoose.Schema.Types.ObjectId],
-        ref: "User",
-        default: []
-    },
+    likedBy: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User"
+    }],
     likesCount: {
         type: Number,
         default: 0
