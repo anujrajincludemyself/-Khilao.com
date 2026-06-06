@@ -48,4 +48,5 @@ recipeSchema.index({ createdAt: -1 })
 recipeSchema.index({ title: 'text' }) // For text search
 recipeSchema.index({ likesCount: -1 })
 
-module.exports=mongoose.model("Recipes",recipeSchema)
+
+ module.exports=mongoose.model("Recipes",recipeSchema)
